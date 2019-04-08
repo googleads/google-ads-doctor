@@ -15,7 +15,7 @@ creating a valid token which is then written to your client library configuratio
 file.
 
 # Requirements
-Go minimum version 1.11. We require 1.11 or greater because we are using
+Go minimum version 1.12. We require 1.12 or greater because we are using
 [Go modules](https://github.com/golang/go/wiki/Modules) for dependency management.
 
 # Setup
