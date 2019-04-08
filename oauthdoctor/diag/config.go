@@ -514,15 +514,15 @@ func (c *ConfigFile) Validate() (bool, error) {
 
 // MinGoVersion test for the minimum version of Go required.
 func MinGoVersion() error {
-	min := 1.11
+	min := 1.12
 	ver := runtime.Version()
-	parts := strings.Split(ver, "o")
+	parts := strings.Split(ver, ".")
 	v, err := strconv.ParseFloat(parts[1], 32)
 	if err != nil {
 		return fmt.Errorf("could not determine Go runtime version: %s", err)
 	}
 	if v < min {
-		return fmt.Errorf("minimum required Go version is 1.11: you are running %s", ver)
+		return fmt.Errorf("minimum required Go version is 1.12: you are running %s", ver)
 	}
 	return nil
 }
