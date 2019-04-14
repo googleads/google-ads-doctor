@@ -1,6 +1,6 @@
 module oauthdoctor
 
-go 1.12
+go 1.11
 
 require (
 	github.com/fatih/structs v1.1.0
