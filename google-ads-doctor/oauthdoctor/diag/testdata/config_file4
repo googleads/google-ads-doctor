@@ -1,5 +1,0 @@
-# This comment is needed for testing
-api.googleads.refreshToken=GoodRefreshToken
-api.googleads.clientId=GoodClientID
-api.googleads.clientSecret=GoodClientSecret
-api.googleads.developerToken=GoodDevToken

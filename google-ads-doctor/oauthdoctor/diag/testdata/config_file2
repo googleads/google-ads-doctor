@@ -1,8 +1,0 @@
-# This comment is needed for unit testing
-
-Google::Ads::GoogleAds::Config.new do |c|
-  c.client_id = 'GoodClientID' #This comment is needed too
-
-  # Extra comments for testing
-  c.log_target = STDOUT
-end
