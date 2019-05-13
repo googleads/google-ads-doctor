@@ -254,6 +254,7 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
