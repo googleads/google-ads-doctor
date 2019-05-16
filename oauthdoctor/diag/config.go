@@ -253,13 +253,13 @@ func (c *ConfigFile) ReplaceConfig(key, value string) string {
 	backupFp := configFp + "_" + time.Now().Format(time.RFC3339)
 	log.Printf("Backing up config file %s to %s...", configFp, backupFp)
 	if err = os.Rename(configFp, backupFp); err != nil {
-		log.Fatalf("ERROR: Cannot rename config file from (%s) to (%s).",
-			configFp, backupFp)
+		log.Fatalf("ERROR: Cannot rename config file from (%s) to (%s).\nSystem error: %s",
+			configFp, backupFp, err)
 	} else {
 		log.Printf("Creating a new config file %s...", configFp)
 		if err = os.Rename(tmpfile.Name(), configFp); err != nil {
-			log.Fatalf("ERROR: Cannot rename config file from (%s) to (%s).",
-				tmpfile.Name(), configFp)
+			log.Fatalf("ERROR: Cannot rename config file from (%s) to (%s).\nSystem error: %s",
+				tmpfile.Name(), configFp, err)
 		}
 	}
 
