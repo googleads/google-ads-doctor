@@ -227,7 +227,7 @@ func (c *ConfigFile) ReplaceConfig(key, value string) string {
 	// Create a temp file
 	tmpfile, err := ioutil.TempFile("", "googleadsapi_client_lib_config")
 	if err != nil {
-		log.Fatalf("ERROR: Problem creating temp file (%s)", err.Error())
+		log.Fatalf("ERROR: Problem creating temp file.\nSystem error: %s", err)
 	}
 	defer tmpfile.Close()
 
@@ -235,22 +235,22 @@ func (c *ConfigFile) ReplaceConfig(key, value string) string {
 	configFp := filepath.Join(c.Filepath, c.Filename)
 	f, err := os.Open(configFp)
 	if err != nil {
-		log.Fatalf("ERROR: Problem opening config file (%s)", err.Error())
+		log.Fatalf("ERROR: Problem opening config file.\nSystem error: %s", err)
 	}
 	defer f.Close()
 
 	// Replace with new config value and write to temp file
 	newConfigStr := c.ReplaceConfigFromReader(key, value, f)
 	if _, err := tmpfile.Write([]byte(newConfigStr)); err != nil {
-		log.Fatalf("ERROR: Cannot write to temp config file (%s).\n%s",
-			tmpfile.Name(), err.Error())
+		log.Fatalf("ERROR: Cannot write to temp config file (%s).\nSystem error: %s",
+			tmpfile.Name(), err)
 	}
 
 	f.Close()
 	tmpfile.Close()
 
 	// Swap new config file for the old one, and backup the old file
-	backupFp := configFp + "_" + time.Now().Format(time.RFC3339)
+	backupFp := configFp + "_" + time.Now().Format("2006-01-02_15-04-05")
 	log.Printf("Backing up config file %s to %s...", configFp, backupFp)
 	if err = os.Rename(configFp, backupFp); err != nil {
 		log.Fatalf("ERROR: Cannot rename config file from (%s) to (%s).\nSystem error: %s",
