@@ -229,6 +229,7 @@ func (c *ConfigFile) ReplaceConfig(key, value string) string {
 	if err != nil {
 		log.Fatalf("ERROR: Problem creating temp file (%s)", err.Error())
 	}
+	defer tmpfile.Close()
 
 	// Open config file
 	configFp := filepath.Join(c.Filepath, c.Filename)
@@ -244,6 +245,9 @@ func (c *ConfigFile) ReplaceConfig(key, value string) string {
 		log.Fatalf("ERROR: Cannot write to temp config file (%s).\n%s",
 			tmpfile.Name(), err.Error())
 	}
+
+	f.Close()
+	tmpfile.Close()
 
 	// Swap new config file for the old one, and backup the old file
 	backupFp := configFp + "_" + time.Now().Format(time.RFC3339)
