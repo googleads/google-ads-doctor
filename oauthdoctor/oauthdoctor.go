@@ -35,6 +35,8 @@ var (
 )
 
 func main() {
+	log.SetOutput(os.Stdout)
+
 	if err := diag.MinGoVersion(); err != nil {
 		log.Fatal(err)
 	}
