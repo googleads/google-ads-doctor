@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -102,18 +103,34 @@ func (c *Config) reconnect(err error) (*bytes.Buffer, string, error) {
 func (c *Config) genAuthCode() string {
 	conf := c.oauth2Conf(InstalledAppRedirectURL)
 
-	// Redirect user to Google's consent page to ask for permission
+	// Redirect the user to Google's consent page to ask for permission
 	// for the scopes specified above.
 	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline)
 	log.Printf("Visit the URL for the auth dialog:\n%s\n", url)
 
-	log.Print("Copy the code here to continue:")
+	log.Print(genAuthCodePrompt(runtime.GOOS))
 	fmt.Print("Enter Code >> ")
 
 	reader := bufio.NewReader(os.Stdin)
 	code, _ := reader.ReadString('\n')
 
 	return code
+}
+
+// genAuthCodePrompt returns the operating specific command prompt.
+func genAuthCodePrompt(goos string) string {
+	var msg string
+
+	if goos == "windows" {
+		msg += "You are running Windows, so to properly copy and paste the URL "
+		msg += "into the command prompt:\n"
+		msg += "1) Ensure that 'Quick Edit' mode is ON for your Command Prompt\n"
+		msg += "2) Hold down the shift key\n"
+		msg += "3) Highlight the URL\n"
+		msg += "4) Right click on the highlighted area\n"
+	}
+	msg += "Copy the code here to continue:"
+	return msg
 }
 
 // This function prompts the user to login, gets the auth code and exchange
