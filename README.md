@@ -21,7 +21,7 @@ If you are building from source, follow the
 If you want to use a pre-compiled binary, fetch the repository and
 
 ```
-cd <yout_path>/google-ads-doctor/oauthdoctor/bin
+cd <your_path>/google-ads-doctor/oauthdoctor/bin
 
 ```
 
