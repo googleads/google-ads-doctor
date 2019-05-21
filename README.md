@@ -22,6 +22,7 @@ If you want to use a pre-compiled binary, fetch the repository and
 
 ```
 cd <yout_path>/google-ads-doctor/oauthdoctor/bin
+
 ```
 
 There are three directories, one each for Darwin (OSX), Linux, and Windows.
