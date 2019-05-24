@@ -29,11 +29,13 @@ func TestValidate(t *testing.T) {
 	const goodSecret = "09aufj0aj0ufa8s"
 
 	tests := []struct {
+		desc   string
 		cfg    diag.ConfigFile
 		want   bool
 		errstr string
 	}{
 		{
+			desc: "Everything passes",
 			cfg: diag.ConfigFile{
 				ConfigKeys: diag.ConfigKeys{
 					DevToken:        goodDevToken,
@@ -45,8 +47,9 @@ func TestValidate(t *testing.T) {
 			},
 			want:   true,
 			errstr: "nil",
-		}, // Everything passes
+		},
 		{
+			desc: "Invalid DevToken",
 			cfg: diag.ConfigFile{
 				ConfigKeys: diag.ConfigKeys{
 					DevToken:     "INSERT_DEV_TOKEN_HERE",
@@ -57,8 +60,9 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "DevToken",
-		}, // Invalid DevToken
+		},
 		{
+			desc: "Invalid Client",
 			cfg: diag.ConfigFile{
 				ConfigKeys: diag.ConfigKeys{
 					DevToken:     goodDevToken,
@@ -69,8 +73,9 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "ClientID",
-		}, // Invalid ClientID
+		},
 		{
+			desc: "Missing a required key",
 			cfg: diag.ConfigFile{
 				ConfigKeys: diag.ConfigKeys{
 					DevToken:     goodDevToken,
@@ -80,8 +85,9 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "ClientSecret",
-		}, // Missing a required key
+		},
 		{
+			desc: "LoginCustomerID cannot have dashes",
 			cfg: diag.ConfigFile{
 				ConfigKeys: diag.ConfigKeys{
 					LoginCustomerID: "111-111-1111",
@@ -89,14 +95,14 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "LoginCustomerID",
-		}, // LoginCustomerID cannot have dashes
+		},
 	}
 
 	for _, test := range tests {
 		got, err := test.cfg.Validate()
 		if got != test.want || !strings.Contains(errstring(err), test.errstr) {
-			t.Errorf("Wrong result - got: %+v, want: %+v, got err: %s, but missing %s in error msg",
-				got, test.want, errstring(err), test.errstr)
+			t.Errorf("%s - got: %+v, want: %+v, got err: %s, but missing %s in error msg",
+				test.desc, got, test.want, errstring(err), test.errstr)
 		}
 	}
 }
@@ -141,11 +147,13 @@ func TestParseKeyValueFile(t *testing.T) {
 	}
 
 	tests := []struct {
+		desc       string
 		configPath string
 		lang       string
 		want       diag.ConfigFile
 	}{
 		{
+			desc:       "Python: Everything parses correctly",
 			configPath: filepath.Join(dir, "testdata", "config_file1"),
 			lang:       "python",
 			want: diag.ConfigFile{
@@ -159,8 +167,9 @@ func TestParseKeyValueFile(t *testing.T) {
 					RefreshToken: "1/PG1Ap6P-Good_Refresh_Token",
 				},
 			},
-		}, // Python
+		},
 		{
+			desc:       "Ruby (comments included): Missing required config keys",
 			configPath: filepath.Join(dir, "testdata", "config_file2"),
 			lang:       "ruby",
 			want: diag.ConfigFile{
@@ -171,8 +180,9 @@ func TestParseKeyValueFile(t *testing.T) {
 					ClientID: "GoodClientID",
 				},
 			},
-		}, // Ruby: Missing required config keys with comments
+		},
 		{
+			desc:       "PHP: Can parse values with quotes",
 			configPath: filepath.Join(dir, "testdata", "config_file3"),
 			lang:       "php",
 			want: diag.ConfigFile{
@@ -186,8 +196,9 @@ func TestParseKeyValueFile(t *testing.T) {
 					RefreshToken: "GoodRefreshToken",
 				},
 			},
-		}, // PHP: Can parse values with quotes
+		},
 		{
+			desc:       "Java: Everything parses correctly",
 			configPath: filepath.Join(dir, "testdata", "config_file4"),
 			lang:       "java",
 			want: diag.ConfigFile{
@@ -201,14 +212,13 @@ func TestParseKeyValueFile(t *testing.T) {
 					RefreshToken: "GoodRefreshToken",
 				},
 			},
-		}, // Java
+		},
 	}
 
 	for _, test := range tests {
 		got, err := diag.ParseKeyValueFile(test.lang, test.configPath)
 		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("KevValueFile mismatch - got: %+v, want: %+v, err: %s",
-				got, test.want, errstring(err))
+			t.Errorf("%s - got: %+v, want: %+v, err: %s", test.desc, got, test.want, errstring(err))
 		}
 	}
 }
@@ -220,11 +230,13 @@ func TestParseXMLFile(t *testing.T) {
 	}
 
 	tests := []struct {
+		desc       string
 		configPath string
 		lang       string
 		want       diag.ConfigFile
 	}{
 		{
+			desc:       ".NET: Everything parses correctly",
 			configPath: filepath.Join(dir, "testdata", "xml_config_file1"),
 			lang:       "dotnet",
 			want: diag.ConfigFile{
@@ -238,14 +250,13 @@ func TestParseXMLFile(t *testing.T) {
 					RefreshToken: "1/PG1Ap6P-Good_Refresh_Token",
 				},
 			},
-		}, // Can parse DotNet XML with sp
+		},
 	}
 
 	for _, test := range tests {
 		got, err := diag.ParseXMLFile(test.configPath)
 		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("KevValueFile mismatch - got: %+v, want: %+v, err: %s",
-				got, test.want, errstring(err))
+			t.Errorf("%s - got: %+v, want: %+v, err: %s", test.desc, got, test.want, errstring(err))
 		}
 	}
 }

@@ -52,7 +52,7 @@ const (
 var PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 
 // RequiredKeys are the key names used in the Language structure that defines
-//  the contents of a client library configuration file.
+// the contents of a client library configuration file.
 var RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 
 // Config is the collection of language specific elements.

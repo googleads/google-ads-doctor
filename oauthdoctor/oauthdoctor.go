@@ -64,7 +64,7 @@ func main() {
 
 		err := diag.ConnEndpoint()
 		if err != nil {
-			log.Printf("Connect to endpoint error: %s", err.Error())
+			log.Printf("Connect to endpoint error: %s", err)
 		} else {
 			fmt.Printf("Connected to %s\n", diag.ENDPOINT)
 		}
@@ -73,11 +73,11 @@ func main() {
 	// Verify the existence of the config file
 	cfg, err := diag.GetConfigFile(language, *configPath)
 	if err != nil {
-		log.Fatalf("Cannot get default config path: %s\n", err.Error())
+		log.Fatalf("Cannot get default config path: %s\n", err)
 	}
 	*configPath = filepath.Join(cfg.Filepath, cfg.Filename)
 	if _, err := os.Stat(*configPath); os.IsNotExist(err) {
-		log.Fatalf("Cannot find config file: %s\n", *configPath)
+		log.Fatalf("Cannot find config file (%s): %s\n", *configPath, err)
 	}
 	log.Printf("Google Ads API client library config file: %s\n", *configPath)
 
@@ -94,13 +94,13 @@ func main() {
 		cfg, err = diag.ParseKeyValueFile(language, *configPath)
 	}
 	if err != nil {
-		log.Fatalf("Cannot parse %s: %s", *configPath, err.Error())
+		log.Fatalf("Cannot parse %s: %s", *configPath, err)
 	}
 
 	cfg.Print(*hidePII)
 
 	if ok, err := cfg.Validate(); !ok {
-		log.Printf("Config file validation failed: %s\n", err.Error())
+		log.Printf("Config file validation failed: %s\n", err)
 	}
 
 	cid := oauth.ReadCustomerID()
