@@ -94,6 +94,7 @@ var Languages = map[string]Config{
 				RefreshToken:    "api.googleads.refreshToken",
 				LoginCustomerID: "api.googleads.loginCustomerId"}}},
 	"dotnet": {
+		CommentChar: "<!--",
 		Cfg: ConfigFile{
 			Filename: "App.Config",
 			ConfigKeys: ConfigKeys{
@@ -187,7 +188,9 @@ func (c *ConfigFile) ReplaceConfigFromReader(key, value string, r io.Reader) str
 		langKey := c.GetConfigKeysInLang(key)
 
 		// Found the line with old config key and comment it out
-		if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, langKey) {
+		if c.Lang == "dotnet" && strings.Contains(trimmedLine, langKey) {
+			buf.WriteString("<!-- " + trimmedLine + " -->\n")
+		} else if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, langKey) {
 			buf.WriteString(commentChar + line)
 		} else {
 			buf.WriteString(line)
@@ -278,7 +281,7 @@ func (c *ConfigFile) configLineStr(key, value string) (line string) {
 	case "php":
 		line = field + separator + " \"" + value + "\""
 	case "ruby":
-		line = "c." + field + separator + " \"" + value + "\""
+		line = field + separator + " \"" + value + "\""
 	case "python":
 		line = field + separator + value
 	case "dotnet":
