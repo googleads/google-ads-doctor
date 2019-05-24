@@ -452,9 +452,14 @@ func GetDefaultConfigFile(lang string) (ConfigFile, error) {
 	return cfg, nil
 }
 
+// printout prints out key and value in the log. This is used for unit testing.
+var printout = func(str string) {
+	log.Printf(str)
+}
+
 // Print prints out the keys and values in ConfigFile.ConfigKeys.
 func (c *ConfigFile) Print(hidePII bool) {
-	log.Println("Config keys and values:")
+	printout("Config keys and values:")
 	keys := reflect.TypeOf(c.ConfigKeys)
 	vals := reflect.ValueOf(c.ConfigKeys)
 	for i := 0; i < keys.NumField(); i++ {
@@ -465,7 +470,7 @@ func (c *ConfigFile) Print(hidePII bool) {
 		} else if v.String() == "" {
 			v = reflect.ValueOf("<empty>")
 		}
-		log.Printf("\t%s = %s\n", k, v)
+		printout(fmt.Sprintf("\t%s = %s", k, v))
 	}
 }
 
