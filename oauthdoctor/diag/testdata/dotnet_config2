@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <GoogleAdsApi>
+    <!-- This comment is needed for testing.-->
+    <add key="OAuth2RefreshToken" value="1/PG1Ap6P-Good_Refresh_Token" />
+</configuration>

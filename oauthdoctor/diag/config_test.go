@@ -10,16 +10,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package diag_test
+package diag
 
 import (
-	"log"
-	"oauthdoctor/diag"
 	"os"
+	"os/user"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kylelemons/godebug/pretty"
 )
 
 func TestValidate(t *testing.T) {
@@ -29,13 +29,15 @@ func TestValidate(t *testing.T) {
 	const goodSecret = "09aufj0aj0ufa8s"
 
 	tests := []struct {
-		cfg    diag.ConfigFile
+		desc   string
+		cfg    ConfigFile
 		want   bool
 		errstr string
 	}{
 		{
-			cfg: diag.ConfigFile{
-				ConfigKeys: diag.ConfigKeys{
+			desc: "Everything passes",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
 					DevToken:        goodDevToken,
 					ClientID:        goodClientID,
 					ClientSecret:    goodSecret,
@@ -45,10 +47,11 @@ func TestValidate(t *testing.T) {
 			},
 			want:   true,
 			errstr: "nil",
-		}, // Everything passes
+		},
 		{
-			cfg: diag.ConfigFile{
-				ConfigKeys: diag.ConfigKeys{
+			desc: "Invalid DevToken",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
 					DevToken:     "INSERT_DEV_TOKEN_HERE",
 					ClientID:     goodClientID,
 					ClientSecret: goodSecret,
@@ -57,10 +60,11 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "DevToken",
-		}, // Invalid DevToken
+		},
 		{
-			cfg: diag.ConfigFile{
-				ConfigKeys: diag.ConfigKeys{
+			desc: "Invalid Client",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
 					DevToken:     goodDevToken,
 					ClientID:     "randomClientID",
 					ClientSecret: goodSecret,
@@ -69,10 +73,11 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "ClientID",
-		}, // Invalid ClientID
+		},
 		{
-			cfg: diag.ConfigFile{
-				ConfigKeys: diag.ConfigKeys{
+			desc: "Missing a required key",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
 					DevToken:     goodDevToken,
 					ClientID:     goodClientID,
 					RefreshToken: goodToken,
@@ -80,56 +85,264 @@ func TestValidate(t *testing.T) {
 			},
 			want:   false,
 			errstr: "ClientSecret",
-		}, // Missing a required key
+		},
 		{
-			cfg: diag.ConfigFile{
-				ConfigKeys: diag.ConfigKeys{
+			desc: "LoginCustomerID cannot have dashes",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
 					LoginCustomerID: "111-111-1111",
 				},
 			},
 			want:   false,
 			errstr: "LoginCustomerID",
-		}, // LoginCustomerID cannot have dashes
+		},
 	}
 
 	for _, test := range tests {
 		got, err := test.cfg.Validate()
 		if got != test.want || !strings.Contains(errstring(err), test.errstr) {
-			t.Errorf("Wrong result - got: %+v, want: %+v, got err: %s, but missing %s in error msg",
-				got, test.want, errstring(err), test.errstr)
+			t.Errorf("%s\ngot: %+v\nwant: %+v\nError: %s, but missing %s in error msg",
+				test.desc, got, test.want, errstring(err), test.errstr)
 		}
 	}
 }
 
-//TODO: add tests
-func TestReplaceConfig(t *testing.T) {
+func TestGetConfigFile(t *testing.T) {
+	usr, err := user.Current()
+	if err != nil {
+		t.Errorf("Error getting current user: %s\n", err)
+	}
+
 	tests := []struct {
-		key   string
-		value string
-		cfg   diag.ConfigFile
-		input string
-		want  string
+		desc     string
+		lang     string
+		filepath string
+		want     ConfigFile
 	}{
 		{
-			key:   diag.RefreshToken,
-			value: "newValue",
-			cfg:   diag.ConfigFile{Lang: "python"},
-			input: `developer_token: GoodDevToken
-client_secret: GoodClientSecret
-refresh_token: GoodRefreshToken`,
-			want: `developer_token: GoodDevToken
-refresh_token:newValue
-client_secret: GoodClientSecret
-#refresh_token: GoodRefreshToken
-`,
+			desc: "(Python) Get default config file",
+			lang: "python",
+			want: ConfigFile{
+				Filename: "google-ads.yaml",
+				Filepath: usr.HomeDir,
+				Lang:     "python",
+			},
+		},
+		{
+			desc: "(Ruby) Get default config file",
+			lang: "ruby",
+			want: ConfigFile{
+				Filename: "google_ads_config.rb",
+				Filepath: usr.HomeDir,
+				Lang:     "ruby",
+			},
+		},
+		{
+			desc: "(.NET) Get default config file",
+			lang: "dotnet",
+			want: ConfigFile{
+				Filename: "App.Config",
+				Filepath: usr.HomeDir,
+				Lang:     "dotnet",
+			},
+		},
+		{
+			desc: "(PHP) Get default config file",
+			lang: "php",
+			want: ConfigFile{
+				Filename: "google_ads_php.ini",
+				Filepath: usr.HomeDir,
+				Lang:     "php",
+			},
+		},
+		{
+			desc: "(Java) Get default config file",
+			lang: "java",
+			want: ConfigFile{
+				Filename: "ads.properties",
+				Filepath: usr.HomeDir,
+				Lang:     "java",
+			},
+		},
+		{
+			desc:     "(Java) Get config file by given path",
+			lang:     "java",
+			filepath: "/random/config/filepath",
+			want: ConfigFile{
+				Filename: "filepath",
+				Filepath: "/random/config",
+				Lang:     "java",
+			},
 		},
 	}
 
 	for _, test := range tests {
-		got := test.cfg.ReplaceConfigFromReader(test.key, test.value, strings.NewReader(test.input))
+		got, err := GetConfigFile(test.lang, test.filepath)
 
 		if got != test.want {
-			t.Errorf("Wrong result - got: %s, want: %s", got, test.want)
+			t.Errorf("%s\ngot: %s\nwant: %s", test.desc, got, test.want)
+		}
+
+		if err != nil {
+			t.Errorf("%s\nError: %s", test.desc, err)
+		}
+	}
+}
+
+func TestPrint(t *testing.T) {
+	var output string
+	saved := printout
+	defer func() { printout = saved }()
+
+	printout = func(str string) {
+		output += str + "\n"
+	}
+
+	tests := []struct {
+		desc    string
+		cfg     ConfigFile
+		hidePII bool
+		want    string
+	}{
+		{
+			desc: "Print out sensitive info",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
+					ClientID: "someClientID",
+				},
+			},
+			hidePII: false,
+			want:    "someClientID",
+		},
+		{
+			desc: "Print non-sensitive info with hidePII=true",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
+					ClientID:        "someClientID",
+					LoginCustomerID: "1234567890",
+				},
+			},
+			hidePII: true,
+			want:    "1234567890",
+		},
+		{
+			desc: "Hide sensitive info",
+			cfg: ConfigFile{
+				ConfigKeys: ConfigKeys{
+					ClientID: "someClientID",
+				},
+			},
+			hidePII: true,
+			want:    "******",
+		},
+	}
+
+	for _, test := range tests {
+		test.cfg.Print(test.hidePII)
+
+		if output == "" {
+			t.Fatalf("printout not called")
+		}
+
+		if !strings.Contains(output, test.want) {
+			t.Errorf("%s\ngot: %s\nwant substring: %s", test.desc, output, test.want)
+		}
+
+		output = ""
+	}
+}
+
+func TestReplaceConfigFromReader(t *testing.T) {
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Errorf("Error getting current dir: %s", err)
+	}
+
+	tests := []struct {
+		desc      string
+		key       string
+		val       string
+		cfg       ConfigFile
+		commented string
+		added     string
+	}{
+		{
+			desc: "(Python) Replace refresh token correctly",
+			key:  RefreshToken,
+			val:  "new_refresh_token",
+			cfg: ConfigFile{
+				Lang:     "python",
+				Filepath: filepath.Join(dir, "testdata"),
+				Filename: "python_config",
+			},
+			commented: "#refresh_token: 1/PG1",
+			added:     "\nrefresh_token:new_refresh_token",
+		},
+		{
+			desc: "(Ruby) Replace client ID correctly",
+			key:  ClientID,
+			val:  "new_client_id",
+			cfg: ConfigFile{
+				Lang:     "ruby",
+				Filepath: filepath.Join(dir, "testdata"),
+				Filename: "ruby_config",
+			},
+			commented: "#  c.client_id = 'GoodClientID'",
+			added:     "\nc.client_id= \"new_client_id\"",
+		},
+		{
+			desc: "(.NET) Replace dev token correctly",
+			key:  DevToken,
+			val:  "new_dev_token",
+			cfg: ConfigFile{
+				Lang:     "dotnet",
+				Filepath: filepath.Join(dir, "testdata"),
+				Filename: "dotnet_config1",
+			},
+			commented: "<!-- <add key=\"DeveloperToken\" value=\"GoodDevToken\"/> -->",
+			added:     "\n<add key=\"DeveloperToken\" value=\"new_dev_token\"/>",
+		},
+		{
+			desc: "(PHP) Replace client secret correctly",
+			key:  ClientSecret,
+			val:  "new_client_secret",
+			cfg: ConfigFile{
+				Lang:     "php",
+				Filepath: filepath.Join(dir, "testdata"),
+				Filename: "php_config",
+			},
+			commented: ";clientSecret = \"GoodClientSecret\"",
+			added:     "\nclientSecret= \"new_client_secret\"",
+		},
+		{
+			desc: "(Java) Replace refresh token correctly",
+			key:  RefreshToken,
+			val:  "new_refresh_token",
+			cfg: ConfigFile{
+				Lang:     "java",
+				Filepath: filepath.Join(dir, "testdata"),
+				Filename: "java_config",
+			},
+			commented: "#api.googleads.refreshToken=",
+			added:     "\napi.googleads.refreshToken=new_refresh_token",
+		},
+	}
+
+	for _, test := range tests {
+		f, err := os.Open(filepath.Join(test.cfg.Filepath, test.cfg.Filename))
+		if err != nil {
+			t.Fatalf("ERROR: Problem opening config file: %s", err)
+		}
+		defer f.Close()
+
+		got := test.cfg.ReplaceConfigFromReader(test.key, test.val, f)
+
+		if !strings.Contains(got, test.commented) {
+			t.Errorf("%s\ngot: %s\nMissing commented: %s", test.desc, got, test.commented)
+		}
+
+		if !strings.Contains(got, test.added) {
+			t.Errorf("%s\ngot: %s\nMissing added: %s", test.desc, got, test.added)
 		}
 	}
 }
@@ -137,78 +350,88 @@ client_secret: GoodClientSecret
 func TestParseKeyValueFile(t *testing.T) {
 	dir, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Error getting current dir: %s", err)
+		t.Errorf("Error getting current dir: %s", err)
 	}
 
 	tests := []struct {
+		desc       string
 		configPath string
 		lang       string
-		want       diag.ConfigFile
+		want       ConfigFile
 	}{
 		{
-			configPath: filepath.Join(dir, "testdata", "config_file1"),
+			desc:       "(Python) Everything parses correctly",
+			configPath: filepath.Join(dir, "testdata", "python_config"),
 			lang:       "python",
-			want: diag.ConfigFile{
+			want: ConfigFile{
 				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "config_file1",
+				Filename: "python_config",
 				Lang:     "python",
-				ConfigKeys: diag.ConfigKeys{
+				ConfigKeys: ConfigKeys{
 					ClientID:     "0123456789-GoodClientID.apps.googleusercontent.com",
 					ClientSecret: "GoodClientSecret",
 					DevToken:     "GoodDevToken",
 					RefreshToken: "1/PG1Ap6P-Good_Refresh_Token",
 				},
 			},
-		}, // Python
+		},
 		{
-			configPath: filepath.Join(dir, "testdata", "config_file2"),
+			desc:       "(Ruby with comments) Missing required config keys",
+			configPath: filepath.Join(dir, "testdata", "ruby_config"),
 			lang:       "ruby",
-			want: diag.ConfigFile{
+			want: ConfigFile{
 				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "config_file2",
+				Filename: "ruby_config",
 				Lang:     "ruby",
-				ConfigKeys: diag.ConfigKeys{
+				ConfigKeys: ConfigKeys{
 					ClientID: "GoodClientID",
 				},
 			},
-		}, // Ruby: Missing required config keys with comments
+		},
 		{
-			configPath: filepath.Join(dir, "testdata", "config_file3"),
+			desc:       "(PHP) Can parse values with quotes",
+			configPath: filepath.Join(dir, "testdata", "php_config"),
 			lang:       "php",
-			want: diag.ConfigFile{
+			want: ConfigFile{
 				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "config_file3",
+				Filename: "php_config",
 				Lang:     "php",
-				ConfigKeys: diag.ConfigKeys{
+				ConfigKeys: ConfigKeys{
 					ClientID:     "GoodClientID",
 					ClientSecret: "GoodClientSecret",
 					DevToken:     "GoodDevToken",
 					RefreshToken: "GoodRefreshToken",
 				},
 			},
-		}, // PHP: Can parse values with quotes
+		},
 		{
-			configPath: filepath.Join(dir, "testdata", "config_file4"),
+			desc:       "(Java) Everything parses correctly",
+			configPath: filepath.Join(dir, "testdata", "java_config"),
 			lang:       "java",
-			want: diag.ConfigFile{
+			want: ConfigFile{
 				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "config_file4",
+				Filename: "java_config",
 				Lang:     "java",
-				ConfigKeys: diag.ConfigKeys{
+				ConfigKeys: ConfigKeys{
 					ClientID:     "GoodClientID",
 					ClientSecret: "GoodClientSecret",
 					DevToken:     "GoodDevToken",
 					RefreshToken: "GoodRefreshToken",
 				},
 			},
-		}, // Java
+		},
 	}
 
 	for _, test := range tests {
-		got, err := diag.ParseKeyValueFile(test.lang, test.configPath)
-		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("KevValueFile mismatch - got: %+v, want: %+v, err: %s",
-				got, test.want, errstring(err))
+		got, err := ParseKeyValueFile(test.lang, test.configPath)
+
+		if diff := pretty.Compare(test.want, got); diff != "" {
+			t.Errorf("ParseKeyValueFile(%s, %s):\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
+				test.lang, test.configPath, test.desc, diff)
+		}
+
+		if err != nil {
+			t.Errorf("%s\nError: %s", test.desc, errstring(err))
 		}
 	}
 }
@@ -216,36 +439,50 @@ func TestParseKeyValueFile(t *testing.T) {
 func TestParseXMLFile(t *testing.T) {
 	dir, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Error getting current dir: %s", err)
+		t.Errorf("Error getting current dir: %s", err)
 	}
 
 	tests := []struct {
+		desc       string
 		configPath string
 		lang       string
-		want       diag.ConfigFile
+		want       ConfigFile
+		errstr     string
 	}{
 		{
-			configPath: filepath.Join(dir, "testdata", "xml_config_file1"),
+			desc:       "(.NET) Everything parses correctly",
+			configPath: filepath.Join(dir, "testdata", "dotnet_config1"),
 			lang:       "dotnet",
-			want: diag.ConfigFile{
+			want: ConfigFile{
 				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "xml_config_file1",
+				Filename: "dotnet_config1",
 				Lang:     "dotnet",
-				ConfigKeys: diag.ConfigKeys{
+				ConfigKeys: ConfigKeys{
 					ClientID:     "0123456789-GoodClientID.apps.googleusercontent.com",
 					ClientSecret: "GoodClientSecret",
 					DevToken:     "GoodDevToken",
 					RefreshToken: "1/PG1Ap6P-Good_Refresh_Token",
 				},
 			},
-		}, // Can parse DotNet XML with sp
+		},
+		{
+			desc:       "(.NET) Malformed XML",
+			configPath: filepath.Join(dir, "testdata", "dotnet_config2"),
+			lang:       "dotnet",
+			errstr:     "XML syntax error",
+		},
 	}
 
 	for _, test := range tests {
-		got, err := diag.ParseXMLFile(test.configPath)
-		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("KevValueFile mismatch - got: %+v, want: %+v, err: %s",
-				got, test.want, errstring(err))
+		got, err := ParseXMLFile(test.configPath)
+
+		if err != nil && !strings.Contains(err.Error(), test.errstr) {
+			t.Errorf("%s\nParseXMLFile(%s):\nError: %s", test.desc, test.configPath, errstring(err))
+		} else if err == nil {
+			if diff := pretty.Compare(test.want, got); diff != "" {
+				t.Errorf("ParseXMLFile(%s):\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
+					test.configPath, test.desc, diff)
+			}
 		}
 	}
 }

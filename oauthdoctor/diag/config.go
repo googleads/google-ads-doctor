@@ -52,7 +52,7 @@ const (
 var PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 
 // RequiredKeys are the key names used in the Language structure that defines
-//  the contents of a client library configuration file.
+// the contents of a client library configuration file.
 var RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 
 // Config is the collection of language specific elements.
@@ -452,9 +452,14 @@ func GetDefaultConfigFile(lang string) (ConfigFile, error) {
 	return cfg, nil
 }
 
+// printout prints out a string in the log.
+var printout = func(str string) {
+	log.Printf(str)
+}
+
 // Print prints out the keys and values in ConfigFile.ConfigKeys.
 func (c *ConfigFile) Print(hidePII bool) {
-	log.Println("Config keys and values:")
+	printout("Config keys and values:")
 	keys := reflect.TypeOf(c.ConfigKeys)
 	vals := reflect.ValueOf(c.ConfigKeys)
 	for i := 0; i < keys.NumField(); i++ {
@@ -465,7 +470,7 @@ func (c *ConfigFile) Print(hidePII bool) {
 		} else if v.String() == "" {
 			v = reflect.ValueOf("<empty>")
 		}
-		log.Printf("\t%s = %s\n", k, v)
+		printout(fmt.Sprintf("\t%s = %s", k, v))
 	}
 }
 
