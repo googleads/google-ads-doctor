@@ -347,9 +347,6 @@ func TestReplaceConfigFromReader(t *testing.T) {
 	}
 }
 
-func TestReplaceConfig(t *testing.T) {
-}
-
 func TestParseKeyValueFile(t *testing.T) {
 	dir, err := os.Getwd()
 	if err != nil {

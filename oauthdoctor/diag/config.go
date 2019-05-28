@@ -452,7 +452,7 @@ func GetDefaultConfigFile(lang string) (ConfigFile, error) {
 	return cfg, nil
 }
 
-// printout prints out key and value in the log. This is used for unit testing.
+// printout prints out a string in the log.
 var printout = func(str string) {
 	log.Printf(str)
 }
