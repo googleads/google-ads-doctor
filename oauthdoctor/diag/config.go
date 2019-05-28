@@ -188,10 +188,8 @@ func (c *ConfigFile) ReplaceConfigFromReader(key, value string, r io.Reader) str
 		langKey := c.GetConfigKeysInLang(key)
 
 		// Found the line with old config key and comment it out
-		if c.Lang == "dotnet" {
-			if strings.Contains(trimmedLine, langKey) {
-				buf.WriteString("<!-- " + trimmedLine + " -->\n")
-			}
+		if c.Lang == "dotnet" && strings.Contains(trimmedLine, langKey) {
+			buf.WriteString("<!-- " + trimmedLine + " -->\n")
 		} else if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, langKey) {
 			buf.WriteString(commentChar + line)
 		} else {
@@ -332,6 +330,10 @@ func findFirstValue(k string) string {
 		return matches[0]
 	}
 	return strings.TrimSpace(k)
+}
+
+func (c *ConfigFile) GetFilepath() string {
+	return filepath.Join(c.Filepath, c.Filename)
 }
 
 // ParseKeyValueFile reads a configuration file with keys and values separated
