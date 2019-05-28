@@ -188,10 +188,8 @@ func (c *ConfigFile) ReplaceConfigFromReader(key, value string, r io.Reader) str
 		langKey := c.GetConfigKeysInLang(key)
 
 		// Found the line with old config key and comment it out
-		if c.Lang == "dotnet" {
-			if strings.Contains(trimmedLine, langKey) {
-				buf.WriteString("<!-- " + trimmedLine + " -->\n")
-			}
+		if c.Lang == "dotnet" && strings.Contains(trimmedLine, langKey) {
+			buf.WriteString("<!-- " + trimmedLine + " -->\n")
 		} else if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, langKey) {
 			buf.WriteString(commentChar + line)
 		} else {
