@@ -57,7 +57,7 @@ var RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 
 // Config is the collection of language specific elements.
 type Config struct {
-	CommentChar string
+	Comment
 	Separator   string
 	Cfg         ConfigFile
 }
@@ -79,11 +79,18 @@ type ConfigKeys struct {
 	LoginCustomerID string
 }
 
+type Comment struct {
+	LeftMeta string
+	RightMeta string
+}
+
 // Languages defines the idiomatic features of each language in a Google Ads
 // API configuration file.
 var Languages = map[string]Config{
 	"java": {
-		CommentChar: "#",
+		Comment: Comment{
+			LeftMeta: "#",
+		},
 		Separator:   "=",
 		Cfg: ConfigFile{
 			Filename: "ads.properties",
@@ -94,7 +101,10 @@ var Languages = map[string]Config{
 				RefreshToken:    "api.googleads.refreshToken",
 				LoginCustomerID: "api.googleads.loginCustomerId"}}},
 	"dotnet": {
-		CommentChar: "<!--",
+		Comment: Comment{
+			LeftMeta: "<!--",
+			RightMeta: "-->",
+		},
 		Cfg: ConfigFile{
 			Filename: "App.Config",
 			ConfigKeys: ConfigKeys{
@@ -104,7 +114,9 @@ var Languages = map[string]Config{
 				RefreshToken:    "OAuth2RefreshToken",
 				LoginCustomerID: "LoginCustomerId"}}},
 	"php": {
-		CommentChar: ";",
+		Comment: Comment{
+			LeftMeta: ";",
+		},
 		Separator:   "=",
 		Cfg: ConfigFile{
 			Filename: "google_ads_php.ini",
@@ -115,7 +127,9 @@ var Languages = map[string]Config{
 				RefreshToken:    "refreshToken",
 				LoginCustomerID: "loginCustomerId"}}},
 	"python": {
-		CommentChar: "#",
+		Comment: Comment{
+			LeftMeta: "#",
+		},
 		Separator:   ":",
 		Cfg: ConfigFile{
 			Filename: "google-ads.yaml",
@@ -126,7 +140,9 @@ var Languages = map[string]Config{
 				RefreshToken:    "refresh_token",
 				LoginCustomerID: "login_customer_id"}}},
 	"ruby": {
-		CommentChar: "#",
+		Comment: Comment{
+			LeftMeta: "#",
+		},
 		Separator:   "=",
 		Cfg: ConfigFile{
 			Filename: "google_ads_config.rb",
@@ -180,7 +196,7 @@ func (c *ConfigFile) ReplaceConfigFromReader(key, value string, r io.Reader) str
 	// Insert the new key-value pair at the "top" of the file. "Top" is
 	// the topmost position that is syntactically correct based on the language.
 	// And then it finds the line with the old config key and comments it out.
-	commentChar := Languages[c.Lang].CommentChar
+	comment := Languages[c.Lang].Comment
 	scanner := bufio.NewScanner(r)
 	for i := 0; scanner.Scan(); i++ {
 		line := scanner.Text() + "\n"
@@ -188,28 +204,27 @@ func (c *ConfigFile) ReplaceConfigFromReader(key, value string, r io.Reader) str
 		langKey := c.GetConfigKeysInLang(key)
 
 		// Found the line with old config key and comment it out
-		if c.Lang == "dotnet" && strings.Contains(trimmedLine, langKey) {
-			buf.WriteString("<!-- " + trimmedLine + " -->\n")
-		} else if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, langKey) {
-			buf.WriteString(commentChar + line)
+		if !strings.HasPrefix(trimmedLine, comment.LeftMeta) && strings.Contains(trimmedLine, langKey) {
+			buf.WriteString(comment.LeftMeta + trimmedLine + comment.RightMeta + "\n")
 		} else {
 			buf.WriteString(line)
 		}
 
+		// Add a line with the new config value
 		switch c.Lang {
 		case "dotnet":
-			if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, "<GoogleAdsApi>") {
+			if !strings.HasPrefix(trimmedLine, comment.LeftMeta) && strings.Contains(trimmedLine, "<GoogleAdsApi>") {
 				buf.WriteString(c.configLineStr(key, value))
 			}
 		case "php":
-			if !strings.HasPrefix(trimmedLine, commentChar) {
+			if !strings.HasPrefix(trimmedLine, comment.LeftMeta) {
 				if (key == DevToken && strings.Contains(trimmedLine, "[GOOGLE_ADS]")) ||
 					strings.Contains(trimmedLine, "[OAUTH2]") {
 					buf.WriteString(c.configLineStr(key, value))
 				}
 			}
 		case "ruby":
-			if !strings.HasPrefix(trimmedLine, commentChar) && strings.Contains(trimmedLine, "Google::Ads::GoogleAds::Config.new") {
+			if !strings.HasPrefix(trimmedLine, comment.LeftMeta) && strings.Contains(trimmedLine, "Google::Ads::GoogleAds::Config.new") {
 				buf.WriteString(c.configLineStr(key, value))
 			}
 		default:
@@ -338,7 +353,7 @@ func ParseKeyValueFile(lang, filepath string) (c ConfigFile, err error) {
 	keyValue := make(map[string]string, 0)
 	c, _ = GetConfigFile(lang, filepath)
 	separator := Languages[c.Lang].Separator
-	commentChar := Languages[c.Lang].CommentChar
+	comment := Languages[c.Lang].Comment
 
 	f, err := os.Open(filepath)
 	if err != nil {
@@ -351,7 +366,7 @@ func ParseKeyValueFile(lang, filepath string) (c ConfigFile, err error) {
 		line := strings.TrimSpace(scanner.Text())
 
 		// Skips comments
-		if strings.HasPrefix(line, commentChar) {
+		if strings.HasPrefix(line, comment.LeftMeta) {
 			continue
 		}
 

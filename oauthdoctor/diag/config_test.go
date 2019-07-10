@@ -287,7 +287,7 @@ func TestReplaceConfigFromReader(t *testing.T) {
 				Filepath: filepath.Join(dir, "testdata"),
 				Filename: "ruby_config",
 			},
-			commented: "#  c.client_id = 'GoodClientID'",
+			commented: "#c.client_id = 'GoodClientID'",
 			added:     "\nc.client_id= \"new_client_id\"",
 		},
 		{
@@ -299,7 +299,19 @@ func TestReplaceConfigFromReader(t *testing.T) {
 				Filepath: filepath.Join(dir, "testdata"),
 				Filename: "dotnet_config1",
 			},
-			commented: "<!-- <add key=\"DeveloperToken\" value=\"GoodDevToken\"/> -->",
+			commented: "<!--<add key=\"DeveloperToken\" value=\"GoodDevToken\"/>-->",
+			added:     "\n<add key=\"DeveloperToken\" value=\"new_dev_token\"/>",
+		},
+		{
+			desc: "(.NET) Add a dev token without replacing",
+			key:  DevToken,
+			val:  "new_dev_token",
+			cfg: ConfigFile{
+				Lang:     "dotnet",
+				Filepath: filepath.Join(dir, "testdata"),
+				Filename: "dotnet_config3",
+			},
+			commented: "",
 			added:     "\n<add key=\"DeveloperToken\" value=\"new_dev_token\"/>",
 		},
 		{
