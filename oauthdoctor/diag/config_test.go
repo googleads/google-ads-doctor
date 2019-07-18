@@ -15,12 +15,14 @@ package diag
 import (
 	"bytes"
 	"fmt"
+        "io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kylelemons/godebug/pretty"
 )
@@ -332,7 +334,7 @@ func TestReplaceConfigFromReader(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		f, err := os.Open(filepath.Join(test.cfg.Filepath, test.cfg.Filename))
+		f, err := os.Open(test.cfg.GetFilepath())
 		if err != nil {
 			t.Fatalf("ERROR: Problem opening config file: %s", err)
 		}

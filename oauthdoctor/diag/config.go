@@ -252,7 +252,7 @@ func (c *ConfigFile) ReplaceConfig(key, value string) string {
 	defer tmpfile.Close()
 
 	// Open config file
-	configFp := filepath.Join(c.Filepath, c.Filename)
+	configFp := c.GetFilepath()
 	f, err := os.Open(configFp)
 	if err != nil {
 		log.Fatalf("ERROR: Problem opening config file: %s", err)
@@ -579,4 +579,8 @@ func parseInt(token string) (int, error) {
 		return -1, fmt.Errorf("could not parse version (%s): %s", token, err)
 	}
 	return int(num), nil
+}
+
+func (c *ConfigFile) GetFilepath() string {
+	return filepath.Join(c.Filepath, c.Filename)
 }
