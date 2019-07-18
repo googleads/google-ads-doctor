@@ -81,6 +81,7 @@ type ConfigKeys struct {
 	LoginCustomerID string
 }
 
+// Comment represents comment characters. If a comment is a line comment, RightMeta will be an empty string.
 type Comment struct {
 	LeftMeta  string
 	RightMeta string
