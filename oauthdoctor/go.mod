@@ -1,4 +1,4 @@
-module oauthdoctor
+module github.com/googleads/google-ads-doctor/oauthdoctor
 
 go 1.11
 
