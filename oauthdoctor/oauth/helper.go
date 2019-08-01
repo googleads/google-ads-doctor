@@ -24,9 +24,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"oauthdoctor/diag"
 	"os"
 	"strings"
+
+	"github.com/googleads/google-ads-doctor/oauthdoctor/diag"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"

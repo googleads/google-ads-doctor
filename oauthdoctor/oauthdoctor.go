@@ -17,11 +17,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"oauthdoctor/diag"
-	"oauthdoctor/oauth"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/googleads/google-ads-doctor/oauthdoctor/diag"
+	"github.com/googleads/google-ads-doctor/oauthdoctor/oauth"
 )
 
 var (
