@@ -251,7 +251,7 @@ func TestReplaceConfig(t *testing.T) {
 	now := time.Now().Format("2006-01-02_")
 	dir, err := os.Getwd()
 	if err != nil {
-		t.Errorf("Error getting current dir: %s", err)
+		t.Fatalf("Error getting current dir: %s", err)
 	}
 
 	tests := []struct {
@@ -259,38 +259,35 @@ func TestReplaceConfig(t *testing.T) {
 		cfg    ConfigFile
 		backup string
 	}{
-		{
-			desc: "Config file and backup file exists",
-			cfg: ConfigFile{
-				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "python_config2",
-				Lang:     "python",
-			},
-			backup: "diag/testdata/python_config2_" + now,
+		desc: "Config file and backup file exist",
+		cfg: ConfigFile{
+			Filepath: filepath.Join(dir, "testdata"),
+			Filename: "python_config2",
+			Lang:     "python",
 		},
+		backup: "diag/testdata/python_config2_" + now,
 	}
 
-	for _, test := range tests {
-		backup := test.cfg.ReplaceConfig(DevToken, "randomToken")
+	backup := test.cfg.ReplaceConfig(DevToken, "randomToken")
+	config := test.cfg.GetFilepath()
+	_, err = os.Stat(config)
+	if os.IsNotExist(err) {
+		t.Fatalf("%s\nConfig file (%s) is missing", test.desc, config)
+	} else if err != nil {
+		t.Fatalf("%s\nProblem finding the config file: %s", test.desc, config)
+	}
 
-		config := test.cfg.GetFilepath()
-		_, err := os.Stat(config)
-		if os.IsNotExist(err) {
-			t.Errorf("%s\nConfig file (%s) is missing", test.desc, config)
-		}
+	if !strings.Contains(backup, test.backup) {
+		t.Errorf("%s\nBackup config file (%s) is missing and expecting %s", test.desc, backup, test.backup)
+	}
 
-		if !strings.Contains(backup, test.backup) {
-			t.Errorf("%s\nBackup config file (%s) is missing and expecting %s", test.desc, backup, test.backup)
-		}
+	// Cleaning up files
+	if err = os.Remove(config); err != nil {
+		t.Fatalf("%s\nError cleaning up the new config file (%s)", test.desc, config)
+	}
 
-		// Cleaning up files
-		if err = os.Remove(config); err != nil {
-			t.Errorf("%s\nError cleaning up the new config file (%s)", test.desc, config)
-		}
-
-		if err = os.Rename(backup, config); err != nil {
-			t.Errorf("%s\nError renaming the config file from %s to %s", test.desc, backup, config)
-		}
+	if err = os.Rename(backup, config); err != nil {
+		t.Fatalf("%s\nError renaming the config file from %s to %s", test.desc, backup, config)
 	}
 }
 
