@@ -254,7 +254,7 @@ func TestReplaceConfig(t *testing.T) {
 		t.Fatalf("Error getting current dir: %s", err)
 	}
 
-	tests := []struct {
+	test := struct {
 		desc   string
 		cfg    ConfigFile
 		backup string
