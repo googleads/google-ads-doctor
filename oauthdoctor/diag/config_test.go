@@ -13,6 +13,8 @@
 package diag
 
 import (
+	"bytes"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -190,14 +192,6 @@ func TestGetConfigFile(t *testing.T) {
 }
 
 func TestPrint(t *testing.T) {
-	var output string
-	saved := printout
-	defer func() { printout = saved }()
-
-	printout = func(str string) {
-		output += str + "\n"
-	}
-
 	tests := []struct {
 		desc    string
 		cfg     ConfigFile
@@ -238,17 +232,13 @@ func TestPrint(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		output := new(bytes.Buffer)
+		log.SetOutput(output)
 		test.cfg.Print(test.hidePII)
 
-		if output == "" {
-			t.Fatalf("printout not called")
-		}
-
-		if !strings.Contains(output, test.want) {
+		if !strings.Contains(output.String(), test.want) {
 			t.Errorf("%s\ngot: %s\nwant substring: %s", test.desc, output, test.want)
 		}
-
-		output = ""
 	}
 }
 

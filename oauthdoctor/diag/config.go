@@ -58,8 +58,8 @@ var RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 // Config is the collection of language specific elements.
 type Config struct {
 	Comment
-	Separator   string
-	Cfg         ConfigFile
+	Separator string
+	Cfg       ConfigFile
 }
 
 // ConfigFile is the structure of a client configuration file.
@@ -80,7 +80,7 @@ type ConfigKeys struct {
 }
 
 type Comment struct {
-	LeftMeta string
+	LeftMeta  string
 	RightMeta string
 }
 
@@ -91,7 +91,7 @@ var Languages = map[string]Config{
 		Comment: Comment{
 			LeftMeta: "#",
 		},
-		Separator:   "=",
+		Separator: "=",
 		Cfg: ConfigFile{
 			Filename: "ads.properties",
 			ConfigKeys: ConfigKeys{
@@ -102,7 +102,7 @@ var Languages = map[string]Config{
 				LoginCustomerID: "api.googleads.loginCustomerId"}}},
 	"dotnet": {
 		Comment: Comment{
-			LeftMeta: "<!--",
+			LeftMeta:  "<!--",
 			RightMeta: "-->",
 		},
 		Cfg: ConfigFile{
@@ -117,7 +117,7 @@ var Languages = map[string]Config{
 		Comment: Comment{
 			LeftMeta: ";",
 		},
-		Separator:   "=",
+		Separator: "=",
 		Cfg: ConfigFile{
 			Filename: "google_ads_php.ini",
 			ConfigKeys: ConfigKeys{
@@ -130,7 +130,7 @@ var Languages = map[string]Config{
 		Comment: Comment{
 			LeftMeta: "#",
 		},
-		Separator:   ":",
+		Separator: ":",
 		Cfg: ConfigFile{
 			Filename: "google-ads.yaml",
 			ConfigKeys: ConfigKeys{
@@ -143,7 +143,7 @@ var Languages = map[string]Config{
 		Comment: Comment{
 			LeftMeta: "#",
 		},
-		Separator:   "=",
+		Separator: "=",
 		Cfg: ConfigFile{
 			Filename: "google_ads_config.rb",
 			ConfigKeys: ConfigKeys{
@@ -465,14 +465,9 @@ func GetDefaultConfigFile(lang string) (ConfigFile, error) {
 	return cfg, nil
 }
 
-// printout prints out a string in the log.
-var printout = func(str string) {
-	log.Printf(str)
-}
-
 // Print prints out the keys and values in ConfigFile.ConfigKeys.
 func (c *ConfigFile) Print(hidePII bool) {
-	printout("Config keys and values:")
+	log.Printf("Config keys and values:")
 	keys := reflect.TypeOf(c.ConfigKeys)
 	vals := reflect.ValueOf(c.ConfigKeys)
 	for i := 0; i < keys.NumField(); i++ {
@@ -483,7 +478,7 @@ func (c *ConfigFile) Print(hidePII bool) {
 		} else if v.String() == "" {
 			v = reflect.ValueOf("<empty>")
 		}
-		printout(fmt.Sprintf("\t%s = %s", k, v))
+		log.Printf("\t%s = %s", k, v)
 	}
 }
 
