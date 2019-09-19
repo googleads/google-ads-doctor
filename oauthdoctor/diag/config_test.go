@@ -181,7 +181,7 @@ func TestGetConfigFile(t *testing.T) {
 	for _, test := range tests {
 		got, err := GetConfigFile(test.lang, test.filepath)
 
-		if got != test.want {
+		if got == test.want {
 			t.Errorf("%s\ngot: %s\nwant: %s", test.desc, got, test.want)
 		}
 
