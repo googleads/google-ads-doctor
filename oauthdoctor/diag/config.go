@@ -542,19 +542,40 @@ func MinGoVersion() error {
 }
 
 func checkGoVersion(v string) error {
-	min := int64(111) // Go Version 1.11
-	num, err := strconv.ParseInt(strings.ReplaceAll(sanitizeVersion(v), ".", ""), 10, 32)
-	if err != nil {
-		return fmt.Errorf("could not determine Go runtime version: %s", err)
+	majorMin := 1
+	minorMin := 11
+
+	parts := strings.Split(sanitizeVersion(v), ".")
+	if len(parts) < 2 {
+		return fmt.Errorf("the given version is too short: %s", v)
 	}
-	if num < min {
-		return fmt.Errorf("minimum required Go version is 1.11: you are running %s", v)
+
+	major, err := parseInt(parts[0])
+	if err != nil {
+		return err
+	}
+
+	minor, err := parseInt(parts[1])
+	if err != nil {
+		return err
+	}
+
+	if major <= majorMin && minor < minorMin {
+		return fmt.Errorf("minimum required Go version is %d.%d: you are running %s", major, minor, v)
 	}
 	return nil
 }
 
-var semanticVersionRe = regexp.MustCompile(`^[0-9\.]+`)
+var semanticVersionRegex = regexp.MustCompile(`^[0-9\.]+`)
 
 func sanitizeVersion(v string) string {
-	return semanticVersionRe.FindString(v)
+	return semanticVersionRegex.FindString(v)
+}
+
+func parseInt(token string) (int, error) {
+	num, err := strconv.ParseInt(token, 10, 32)
+	if err != nil {
+		return -1, fmt.Errorf("could not parse version (%s): %s", token, err)
+	}
+	return int(num), nil
 }

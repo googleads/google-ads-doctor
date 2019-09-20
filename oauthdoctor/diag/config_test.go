@@ -14,6 +14,7 @@ package diag
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os"
 	"os/user"
@@ -494,7 +495,6 @@ func TestCheckGoVersion(t *testing.T) {
 		desc    string
 		version string
 		want    error
-		wantStr string
 	}{
 		{
 			desc:    "Version 1.11 is supported",
@@ -519,25 +519,30 @@ func TestCheckGoVersion(t *testing.T) {
 		{
 			desc:    "Version 1.9 is not supported",
 			version: "1.9",
-			wantStr: "minimum required",
+			want:    fmt.Errorf("minimum required"),
 		},
 		{
 			desc:    "Version #&^% is not supported",
 			version: "#&^%",
-			wantStr: "could not determine",
+			want:    fmt.Errorf("too short"),
 		},
 		{
 			desc:    "Version 1.rc is not supported",
 			version: "1.rc",
-			wantStr: "minimum required",
+			want:    fmt.Errorf("could not parse"),
+		},
+		{
+			desc:    "Version a.b.c is not supported",
+			version: "a.b.c",
+			want:    fmt.Errorf("too short"),
 		},
 	}
 
 	for _, test := range tests {
 		got := checkGoVersion(test.version)
 
-		if got != test.want && !strings.Contains(got.Error(), test.wantStr) {
-			t.Errorf("%s: want: (%v, %s), got: %s", test.desc, test.want, test.wantStr, got)
+		if !strings.Contains(errstring(got), errstring(test.want)) {
+			t.Errorf("[%s] want: %v, got: %s", test.desc, test.want, got)
 		}
 	}
 }
