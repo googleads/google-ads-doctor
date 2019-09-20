@@ -489,6 +489,59 @@ func TestParseXMLFile(t *testing.T) {
 	}
 }
 
+func TestCheckGoVersion(t *testing.T) {
+	tests := []struct {
+		desc    string
+		version string
+		want    error
+		wantStr string
+	}{
+		{
+			desc:    "Version 1.11 is supported",
+			version: "1.11",
+			want:    nil,
+		},
+		{
+			desc:    "Version 2.0 is supported",
+			version: "2.0",
+			want:    nil,
+		},
+		{
+			desc:    "Version 1.12.9 is supported",
+			version: "1.12.9",
+			want:    nil,
+		},
+		{
+			desc:    "Version 1.13rc1 is supported",
+			version: "1.13rc1",
+			want:    nil,
+		},
+		{
+			desc:    "Version 1.9 is not supported",
+			version: "1.9",
+			wantStr: "minimum required",
+		},
+		{
+			desc:    "Version #&^% is not supported",
+			version: "#&^%",
+			wantStr: "could not determine",
+		},
+		{
+			desc:    "Version 1.rc is not supported",
+			version: "1.rc",
+			wantStr: "minimum required",
+		},
+	}
+
+	for _, test := range tests {
+		got := checkGoVersion(test.version)
+
+		if got != test.want && !strings.Contains(got.Error(), test.wantStr) {
+			t.Errorf("%s: want: (%v, %s), got: %s", test.desc, test.want, test.wantStr, got)
+		}
+	}
+}
+
 func errstring(err error) string {
 	if err != nil {
 		return err.Error()
