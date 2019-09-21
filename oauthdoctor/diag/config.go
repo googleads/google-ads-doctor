@@ -48,12 +48,14 @@ const (
 	RefreshToken = "RefreshToken"
 )
 
-// PIIWords is a slice of constant strings that indicate Personally Identifiable Information
-var PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken}
+var (
+	// PIIWords is a slice of constant strings that indicate Personally Identifiable Information
+	PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken}
 
-// RequiredKeys are the key names used in the Language structure that defines
-// the contents of a client library configuration file.
-var RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
+	// RequiredKeys are the key names used in the Language structure that defines
+	// the contents of a client library configuration file.
+	RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
+)
 
 // Config is the collection of language specific elements.
 type Config struct {
@@ -534,17 +536,47 @@ func (c *ConfigFile) Validate() (bool, error) {
 	return valid, err
 }
 
-// MinGoVersion test for the minimum version of Go required.
+// MinGoVersion tests for the minimum version of Go required. The current minimum
+// version supported is 1.11.
 func MinGoVersion() error {
-	min := 1.11
-	ver := runtime.Version()
-	parts := strings.Split(ver, ".")
-	v, err := strconv.ParseFloat(parts[1], 32)
-	if err != nil {
-		return fmt.Errorf("could not determine Go runtime version: %s", err)
+	return checkGoVersion(runtime.Version())
+}
+
+func checkGoVersion(v string) error {
+	majorMin := 1
+	minorMin := 11
+
+	parts := strings.Split(sanitizeVersion(v), ".")
+	if len(parts) < 2 {
+		return fmt.Errorf("the given version is too short: %s", v)
 	}
-	if v < min {
-		return fmt.Errorf("minimum required Go version is 1.11: you are running %s", ver)
+
+	major, err := parseInt(parts[0])
+	if err != nil {
+		return err
+	}
+
+	minor, err := parseInt(parts[1])
+	if err != nil {
+		return err
+	}
+
+	if major <= majorMin && minor < minorMin {
+		return fmt.Errorf("minimum required Go version is %d.%d: you are running %s", major, minor, v)
 	}
 	return nil
+}
+
+var semanticVersionRegex = regexp.MustCompile(`^[0-9\.]+`)
+
+func sanitizeVersion(v string) string {
+	return semanticVersionRegex.FindString(v)
+}
+
+func parseInt(token string) (int, error) {
+	num, err := strconv.ParseInt(token, 10, 32)
+	if err != nil {
+		return -1, fmt.Errorf("could not parse version (%s): %s", token, err)
+	}
+	return int(num), nil
 }

@@ -14,6 +14,7 @@ package diag
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os"
 	"os/user"
@@ -485,6 +486,63 @@ func TestParseXMLFile(t *testing.T) {
 				t.Errorf("ParseXMLFile(%s):\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
 					test.configPath, test.desc, diff)
 			}
+		}
+	}
+}
+
+func TestCheckGoVersion(t *testing.T) {
+	tests := []struct {
+		desc    string
+		version string
+		want    error
+	}{
+		{
+			desc:    "Version 1.11 is supported",
+			version: "1.11",
+			want:    nil,
+		},
+		{
+			desc:    "Version 2.0 is supported",
+			version: "2.0",
+			want:    nil,
+		},
+		{
+			desc:    "Version 1.12.9 is supported",
+			version: "1.12.9",
+			want:    nil,
+		},
+		{
+			desc:    "Version 1.13rc1 is supported",
+			version: "1.13rc1",
+			want:    nil,
+		},
+		{
+			desc:    "Version 1.9 is not supported",
+			version: "1.9",
+			want:    fmt.Errorf("minimum required"),
+		},
+		{
+			desc:    "Version #&^% is not supported",
+			version: "#&^%",
+			want:    fmt.Errorf("too short"),
+		},
+		{
+			desc:    "Version 1.rc is not supported",
+			version: "1.rc",
+			want:    fmt.Errorf("could not parse"),
+		},
+		{
+			desc:    "Version a.b.c is not supported",
+			version: "a.b.c",
+			want:    fmt.Errorf("too short"),
+		},
+	}
+
+	for _, test := range tests {
+		got := checkGoVersion(test.version)
+
+		if !strings.Contains(errstring(got), errstring(test.want)) {
+			t.Errorf("[%s] want: %v, got: %s", test.desc, test.want, got)
 		}
 	}
 }
