@@ -567,7 +567,7 @@ func checkGoVersion(v string) error {
 	return nil
 }
 
-var semanticVersionRegex = regexp.MustCompile(`^[0-9\.]+`)
+var semanticVersionRegex = regexp.MustCompile(`[0-9\.]+`)
 
 func sanitizeVersion(v string) string {
 	return semanticVersionRegex.FindString(v)
