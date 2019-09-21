@@ -536,7 +536,8 @@ func (c *ConfigFile) Validate() (bool, error) {
 	return valid, err
 }
 
-// MinGoVersion test for the minimum version of Go required.
+// MinGoVersion tests for the minimum version of Go required. The current minimum
+// version supported is 1.11.
 func MinGoVersion() error {
 	return checkGoVersion(runtime.Version())
 }
