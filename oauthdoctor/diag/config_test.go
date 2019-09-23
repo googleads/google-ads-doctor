@@ -15,12 +15,14 @@ package diag
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kylelemons/godebug/pretty"
 )
@@ -243,6 +245,52 @@ func TestPrint(t *testing.T) {
 	}
 }
 
+func TestReplaceConfig(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+
+	now := time.Now().Format("2006-01-02_")
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Error getting current dir: %s", err)
+	}
+
+	test := struct {
+		desc   string
+		cfg    ConfigFile
+		backup string
+	}{
+		desc: "Config file and backup file exist",
+		cfg: ConfigFile{
+			Filepath: filepath.Join(dir, "testdata"),
+			Filename: "python_config2",
+			Lang:     "python",
+		},
+		backup: "diag/testdata/python_config2_" + now,
+	}
+
+	backup := test.cfg.ReplaceConfig(DevToken, "randomToken")
+	config := test.cfg.GetFilepath()
+
+	defer func() {
+		// Cleaning up files
+		if err = os.Remove(config); err != nil {
+			t.Fatalf("%s\nError cleaning up the new config file (%s): %s", test.desc, config, err)
+		}
+
+		if err = os.Rename(backup, config); err != nil {
+			t.Fatalf("%s\nError renaming the config file from %s to %s: %s", test.desc, backup, config, err)
+		}
+	}()
+
+	if _, err = os.Stat(config); err != nil {
+		t.Fatalf("%s\nProblem finding the config file (%s): %s", test.desc, config, err)
+	}
+
+	if !strings.Contains(backup, test.backup) {
+		t.Errorf("%s\nBackup config file (%s) is missing and expecting %s: %s", test.desc, backup, test.backup, err)
+	}
+}
+
 func TestReplaceConfigFromReader(t *testing.T) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -332,7 +380,7 @@ func TestReplaceConfigFromReader(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		f, err := os.Open(filepath.Join(test.cfg.Filepath, test.cfg.Filename))
+		f, err := os.Open(test.cfg.GetFilepath())
 		if err != nil {
 			t.Fatalf("ERROR: Problem opening config file: %s", err)
 		}
