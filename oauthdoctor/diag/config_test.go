@@ -15,7 +15,7 @@ package diag
 import (
 	"bytes"
 	"fmt"
-        "io/ioutil"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
