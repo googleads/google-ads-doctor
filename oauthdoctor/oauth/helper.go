@@ -63,6 +63,11 @@ type Config struct {
 	Verbose    bool
 }
 
+// ConfigWriter allows replacement of key by a given value in a configuration.
+type ConfigWriter interface {
+	ReplaceConfig(k, v string) string
+}
+
 var (
 	stdinSanitizer = strings.NewReplacer("\n", "")
 
@@ -148,16 +153,15 @@ func (c *Config) diagnose(err error) {
 			"manager account.\nPlease login with a Google Ads account with manager access.")
 	case GoogleAdsAPIDisabled:
 		log.Print("Press <Enter> to continue after you enable Google Ads API")
-		reader := bufio.NewReader(os.Stdin)
-		reader.ReadString('\n')
+		readStdin()
 	case InvalidClientInfo:
 		log.Print("ERROR: Your client ID and/or secret may be invalid.")
-		replaceCloudCredentials(c.ConfigFile)
+		replaceCloudCredentials(&c.ConfigFile)
 	case InvalidRefreshToken, Unauthorized:
 		log.Print("ERROR: Your refresh token may be invalid.")
 	case MissingDevToken:
 		log.Print("ERROR: Your developer token is missing in the configuration file")
-		replaceDevToken(c.ConfigFile)
+		replaceDevToken(&c.ConfigFile)
 	case Unauthenticated:
 		log.Print("ERROR: The login email may not have access to the given account.")
 	case InvalidCustomerID:
@@ -169,26 +173,28 @@ func (c *Config) diagnose(err error) {
 	}
 }
 
+var (
+	readClientID = func() string {
+		fmt.Print("New Client ID >> ")
+		return readStdin()
+	}
+
+	readClientSecret = func() string {
+		fmt.Print("New Client Secret >> ")
+		return readStdin()
+	}
+)
+
 // replaceCloudCredentials prompts the user to create a new client ID and
 // secret and to then enter them at the prompt. The values entered will
 // replace the existing values in the client library configuration file.
-func replaceCloudCredentials(c diag.ConfigFile) {
-	log.Print("Follow this guide to setup your OAuth2 client ID " +
-		"and client secret: " +
+func replaceCloudCredentials(c ConfigWriter) {
+	log.Print("Follow this guide to setup your OAuth2 client ID and client secret: " +
 		"https://developers.google.com/adwords/api/docs/guides/first-api-call#set_up_oauth2_authentication")
-	fmt.Print("New Client ID >> ")
 
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
+	clientID := readClientID()
+	clientSecret := readClientSecret()
 
-	strings.Replace(input, "\n", "", -1)
-	clientID := strings.Replace(input, "\n", "", -1)
-
-	fmt.Print("New Client Secret >> ")
-	reader = bufio.NewReader(os.Stdin)
-	input, _ = reader.ReadString('\n')
-
-	clientSecret := strings.Replace(input, "\n", "", -1)
 	c.ReplaceConfig(diag.ClientID, clientID)
 	c.ReplaceConfig(diag.ClientSecret, clientSecret)
 }
@@ -196,32 +202,26 @@ func replaceCloudCredentials(c diag.ConfigFile) {
 // replaceDevToken guides the user to retrieve their developer token and
 // enter it at the prompt. The entered value will replace the existing
 // developer token in the client library configuration file.
-func replaceDevToken(c diag.ConfigFile) {
+func replaceDevToken(c ConfigWriter) {
 	log.Print("Please follow this guide to retrieve your developer token: " +
 		"https://developers.google.com/adwords/api/docs/guides/signup#step-2")
 	log.Print("Pleae enter a new Developer Token here and it will replace " +
 		"the one in your client library configuration file")
+
 	fmt.Print("New Developer Token >> ")
+	devToken := readStdin()
 
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
-
-	strings.Replace(input, "\n", "", -1)
-	devToken := strings.Replace(input, "\n", "", -1)
 	c.ReplaceConfig(diag.DevToken, devToken)
 }
 
 // replaceRefreshToken asks the user if they want to replace the refresh
 // token in the configuration file with the newly generated value.
-func replaceRefreshToken(c diag.ConfigFile, refreshToken string) {
+func replaceRefreshToken(c ConfigWriter, refreshToken string) {
 	log.Print("Would you like to replace your refresh token in the " +
 		"client library config file with the new one generated?")
+
 	fmt.Print("Enter Y for Yes [Anything else is No] >> ")
-
-	reader := bufio.NewReader(os.Stdin)
-	answer, _ := reader.ReadString('\n')
-
-	answer = strings.Replace(answer, "\n", "", -1)
+	answer := readStdin()
 
 	if answer == "Y" {
 		c.ReplaceConfig(diag.RefreshToken, refreshToken)
