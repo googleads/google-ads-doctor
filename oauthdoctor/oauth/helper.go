@@ -63,6 +63,20 @@ type Config struct {
 	Verbose    bool
 }
 
+var (
+	stdinSanitizer = strings.NewReplacer("\n", "")
+
+	readStdin = func() string {
+		reader := bufio.NewReader(os.Stdin)
+		str, err := reader.ReadString('\n')
+		if err != nil {
+			log.Printf("Error reading input (%s) from command line: %s", str, err)
+		}
+
+		return strings.TrimSpace(stdinSanitizer.Replace(str))
+	}
+)
+
 // SimulateOAuthFlow simulates the OAuth2 flows supported by the Google Ads API
 // client libraries.
 func (c *Config) SimulateOAuthFlow() {
@@ -270,16 +284,14 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-// ReadCustomerID retrieves the CID from stdin
+// ReadCustomerID retrieves the CID from stdin.
 func ReadCustomerID() string {
-	reader := bufio.NewReader(os.Stdin)
-
 	for {
 		log.Print("Please enter a Google Ads account ID:")
-		customerID, _ := reader.ReadString('\n')
-		customerID = strings.TrimSpace(strings.Replace(customerID, "\n", "", -1))
+		customerID := readStdin()
+
 		if customerID != "" {
-			return strings.Replace(customerID, "-", "", -1)
+			return strings.ReplaceAll(customerID, "-", "")
 		}
 	}
 }
