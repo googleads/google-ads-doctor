@@ -497,44 +497,49 @@ func TestCheckGoVersion(t *testing.T) {
 		want    error
 	}{
 		{
-			desc:    "Version 1.11 is supported",
-			version: "1.11",
+			desc:    "Version go1.11 is supported",
+			version: "go1.11",
 			want:    nil,
 		},
 		{
-			desc:    "Version 2.0 is supported",
-			version: "2.0",
+			desc:    "Version go2.0 is supported",
+			version: "go2.0",
 			want:    nil,
 		},
 		{
-			desc:    "Version 1.12.9 is supported",
-			version: "1.12.9",
+			desc:    "Version go1.12.9 is supported",
+			version: "go1.12.9",
 			want:    nil,
 		},
 		{
-			desc:    "Version 1.13rc1 is supported",
-			version: "1.13rc1",
+			desc:    "Version go1.13rc1 is supported",
+			version: "go1.13rc1",
 			want:    nil,
 		},
 		{
-			desc:    "Version 1.9 is not supported",
-			version: "1.9",
+			desc:    "Version 1.12 is supported",
+			version: "1.12",
+			want:    nil,
+		},
+		{
+			desc:    "Version go1.9 is not supported",
+			version: "go1.9",
 			want:    fmt.Errorf("minimum required"),
 		},
 		{
-			desc:    "Version #&^% is not supported",
-			version: "#&^%",
+			desc:    "Version go#&^% is not supported",
+			version: "go#&^%",
 			want:    fmt.Errorf("too short"),
 		},
 		{
-			desc:    "Version 1.rc is not supported",
-			version: "1.rc",
+			desc:    "Version go1.rc is not supported",
+			version: "go1.rc",
 			want:    fmt.Errorf("could not parse"),
 		},
 		{
 			desc:    "Version a.b.c is not supported",
 			version: "a.b.c",
-			want:    fmt.Errorf("too short"),
+			want:    fmt.Errorf("could not parse"),
 		},
 	}
 
