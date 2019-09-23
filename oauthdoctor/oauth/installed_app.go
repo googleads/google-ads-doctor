@@ -137,8 +137,7 @@ func genAuthCodePrompt(goos string) string {
 // for the refresh token. And then, it gets the account info. This function
 // is used based on the assumption of missing/incorrect refresh token in the
 // client library config file.
-func (c *Config) connectWithNoRefreshToken() (
-	*bytes.Buffer, string, error) {
+func (c *Config) connectWithNoRefreshToken() (*bytes.Buffer, string, error) {
 	code := c.genAuthCode()
 	client, refreshToken := c.oauth2Client(code)
 	accountInfo, err := c.getAccount(client)
@@ -147,8 +146,7 @@ func (c *Config) connectWithNoRefreshToken() (
 
 // With refresh token given from client lib config file, it directly connects
 // with OAuth and get the account info.
-func (c *Config) connectWithRefreshToken() (
-	*bytes.Buffer, error) {
+func (c *Config) connectWithRefreshToken() (*bytes.Buffer, error) {
 	conf := &oauth2.Config{
 		ClientID:     c.ConfigFile.ClientID,
 		ClientSecret: c.ConfigFile.ClientSecret,
