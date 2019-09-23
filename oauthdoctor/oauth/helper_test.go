@@ -36,7 +36,7 @@ func TestReadCustomerID(t *testing.T) {
 
 		got := ReadCustomerID()
 		if got != test.want {
-			t.Errorf("[%s] want: %s, got: %s\n", test.desc, test.want, got)
+			t.Errorf("[%s] got: %s, want: %s\n", test.desc, got, test.want)
 		}
 	}
 }
