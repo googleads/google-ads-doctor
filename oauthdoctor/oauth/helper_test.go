@@ -21,11 +21,11 @@ func (c *FakeConfig) ReplaceConfig(k, v string) string {
 func TestReplaceCloudCredentials(t *testing.T) {
 	log.SetOutput(ioutil.Discard)
 
-	originalReadID := readClientID
-	originalReadSecret := readClientSecret
+	originalReadID := getClientID
+	originalReadSecret := getClientSecret
 	defer func() {
-		readClientID = originalReadID
-		readClientSecret = originalReadSecret
+		getClientID = originalReadID
+		getClientSecret = originalReadSecret
 	}()
 
 	test := struct {
@@ -47,10 +47,10 @@ func TestReplaceCloudCredentials(t *testing.T) {
 		clientSecret: "newSecret",
 	}
 
-	readClientID = func() string {
+	getClientID = func() string {
 		return test.clientID
 	}
-	readClientSecret = func() string {
+	getClientSecret = func() string {
 		return test.clientSecret
 	}
 
@@ -62,24 +62,28 @@ func TestReplaceCloudCredentials(t *testing.T) {
 	}
 }
 
-func setup() func() {
+func disableOutput(t *testing.T) func() {
 	log.SetOutput(ioutil.Discard)
 
+	var err error
 	stdout := os.Stdout
-	os.Stdout, _ = os.Create(os.DevNull)
+	os.Stdout, err = os.Create(os.DevNull)
+	if err != nil {
+		t.Fatalf("Unable to create /dev/null: %s", err)
+	}
 	stdin := readStdin
 
-	teardown := func() {
+	enableOutput := func() {
 		os.Stdout = stdout
 		readStdin = stdin
 	}
 
-	return teardown
+	return enableOutput
 }
 
 func TestReplaceDevToken(t *testing.T) {
-	teardown := setup()
-	defer teardown()
+	enableOutput := disableOutput(t)
+	defer enableOutput()
 
 	test := struct {
 		desc string
@@ -109,8 +113,8 @@ func TestReplaceDevToken(t *testing.T) {
 }
 
 func TestReplaceRefreshToken(t *testing.T) {
-	teardown := setup()
-	defer teardown()
+	enableOutput := disableOutput(t)
+	defer enableOutput()
 
 	tests := []struct {
 		desc  string
@@ -154,7 +158,7 @@ func TestReplaceRefreshToken(t *testing.T) {
 
 		replaceRefreshToken(&test.c, test.input)
 
-		if test.want != test.c.cfgFile.RefreshToken {
+		if test.c.cfgFile.RefreshToken != test.want {
 			t.Errorf("[%s] got: %s, want: %s", test.desc, test.c.cfgFile.RefreshToken, test.want)
 		}
 	}

@@ -174,12 +174,12 @@ func (c *Config) diagnose(err error) {
 }
 
 var (
-	readClientID = func() string {
+	getClientID = func() string {
 		fmt.Print("New Client ID >> ")
 		return readStdin()
 	}
 
-	readClientSecret = func() string {
+	getClientSecret = func() string {
 		fmt.Print("New Client Secret >> ")
 		return readStdin()
 	}
@@ -192,8 +192,8 @@ func replaceCloudCredentials(c ConfigWriter) {
 	log.Print("Follow this guide to setup your OAuth2 client ID and client secret: " +
 		"https://developers.google.com/adwords/api/docs/guides/first-api-call#set_up_oauth2_authentication")
 
-	clientID := readClientID()
-	clientSecret := readClientSecret()
+	clientID := getClientID()
+	clientSecret := getClientSecret()
 
 	c.ReplaceConfig(diag.ClientID, clientID)
 	c.ReplaceConfig(diag.ClientSecret, clientSecret)
