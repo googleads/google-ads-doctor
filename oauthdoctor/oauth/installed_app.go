@@ -59,7 +59,7 @@ func (c *Config) simulateAppFlow() {
 		log.Println("SUCCESS: OAuth test passed with given config file settings.")
 
 		if refreshToken != "" {
-			replaceRefreshToken(c.ConfigFile, refreshToken)
+			replaceRefreshToken(&c.ConfigFile, refreshToken)
 		}
 	} else {
 		if c.Verbose {
