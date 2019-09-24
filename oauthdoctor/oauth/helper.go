@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -255,17 +254,23 @@ func (c *Config) oauth2Client(code string) (*http.Client, string) {
 	return conf.Client(oauth2.NoContext, token), token.RefreshToken
 }
 
+var apiURL = "https://googleads.googleapis.com/v1/customers/"
+
 // getAccount makes a HTTP request to Google Ads API customer account
 // endpoint and parse the JSON response.
 func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
-	req, _ := http.NewRequest("GET",
-		"https://googleads.googleapis.com/v1/customers/"+c.CustomerID,
-		nil)
+	req, err := http.NewRequest("GET", apiURL+c.CustomerID, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("developer-token", c.ConfigFile.DevToken)
 	if c.ConfigFile.LoginCustomerID != "" {
 		req.Header.Set("login-customer-id", c.ConfigFile.LoginCustomerID)
 	}
-	resp, err := client.Do(req)
+
+	var resp *http.Response
+	resp, err = client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +283,7 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	json.Unmarshal(buf.Bytes(), &jsonBody)
 
 	if jsonBody["error"] != nil {
-		return nil, errors.New(buf.String())
+		return nil, fmt.Errorf(jsonBody["error"].(string))
 	}
 
 	return buf, nil
