@@ -1,9 +1,11 @@
 package oauth
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/googleads/google-ads-doctor/oauthdoctor/diag"
@@ -16,6 +18,70 @@ type FakeConfig struct {
 func (c *FakeConfig) ReplaceConfig(k, v string) string {
 	c.cfgFile.SetConfigKeys(k, v)
 	return ""
+}
+
+func TestDiagnose(t *testing.T) {
+	enableStdio := disableStdio(t)
+	defer enableStdio()
+
+	origFn := replaceDevToken
+	replaceDevToken = func(c ConfigWriter) {}
+	defer func() { replaceDevToken = origFn }()
+
+	c := Config{}
+
+	tests := []struct {
+		desc     string
+		filepath string
+		want     string
+	}{
+		{
+			desc:     "Check AccessNotPermittedForManagerAccount",
+			filepath: "./testdata/no_manager_access.json",
+			want:     "manager access",
+		},
+		{
+			desc:     "Check GoogleAdsAPIDisabled",
+			filepath: "./testdata/api_disabled.json",
+			want:     "enable Google Ads API",
+		},
+		{
+			desc:     "Check MissingDevToken",
+			filepath: "./testdata/no_dev_token.json",
+			want:     "developer token is missing",
+		},
+		{
+			desc:     "Check Unauthenticated",
+			filepath: "./testdata/unauthenticated.json",
+			want:     "login email may not have access",
+		},
+		{
+			desc:     "Check InvalidRefreshToken",
+			filepath: "./testdata/permission_denied.json",
+			want:     "refresh token may be invalid",
+		},
+		{
+			desc:     "Check undetermined error",
+			filepath: "./testdata/undetermined_error.json",
+			want:     "cannot determine the exact error",
+		},
+	}
+
+	for _, tt := range tests {
+		var got strings.Builder
+		log.SetOutput(&got)
+
+		content, err := ioutil.ReadFile(tt.filepath)
+		if err != nil {
+			t.Fatalf("Problem opening test file: %s", err)
+		}
+
+		c.diagnose(fmt.Errorf(string(content)))
+
+		if !strings.Contains(got.String(), tt.want) {
+			t.Errorf("[%s] got: (%s). Should have text (%s).", tt.desc, got.String(), tt.want)
+		}
+	}
 }
 
 func TestReplaceCloudCredentials(t *testing.T) {
@@ -62,7 +128,7 @@ func TestReplaceCloudCredentials(t *testing.T) {
 	}
 }
 
-func disableOutput(t *testing.T) func() {
+func disableStdio(t *testing.T) func() {
 	log.SetOutput(ioutil.Discard)
 
 	var err error
@@ -73,17 +139,17 @@ func disableOutput(t *testing.T) func() {
 	}
 	stdin := readStdin
 
-	enableOutput := func() {
+	enableStdio := func() {
 		os.Stdout = stdout
 		readStdin = stdin
 	}
 
-	return enableOutput
+	return enableStdio
 }
 
 func TestReplaceDevToken(t *testing.T) {
-	enableOutput := disableOutput(t)
-	defer enableOutput()
+	enableStdio := disableStdio(t)
+	defer enableStdio()
 
 	test := struct {
 		desc string
@@ -113,8 +179,8 @@ func TestReplaceDevToken(t *testing.T) {
 }
 
 func TestReplaceRefreshToken(t *testing.T) {
-	enableOutput := disableOutput(t)
-	defer enableOutput()
+	enableStdio := disableStdio(t)
+	defer enableStdio()
 
 	tests := []struct {
 		desc  string

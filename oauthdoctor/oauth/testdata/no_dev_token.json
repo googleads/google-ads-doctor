@@ -1,0 +1,24 @@
+{
+  "error": {
+    "code": 400,
+    "message": "Request contains an invalid argument.",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.ads.googleads.v0.errors.GoogleAdsFailure",
+        "errors": [
+          {
+            "errorCode": {
+              "requestError": "DEVELOPER_TOKEN_PARAMETER_MISSING"
+            },
+            "message": "developer-token parameter is missing."
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.DebugInfo",
+        "detail": "[ORIGINAL ERROR] generic::invalid_argument: developer-token parameter is missing. [google.rpc.error_details_ext] { details { type_url: \"type.googleapis.com/google.ads.googleads.v0.errors.GoogleAdsFailure\" value: \"\\n+\\n\\002\\010\\023\\022%developer-token parameter is missing.\" } }"
+      }
+    ]
+  }
+}
