@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -230,6 +232,74 @@ func TestReplaceRefreshToken(t *testing.T) {
 	}
 }
 
+func TestGetAccount(t *testing.T) {
+	tests := []struct {
+		desc string
+		c    Config
+		ts   *httptest.Server
+		want string
+	}{
+		{
+			desc: "developer-token is in HTTP header",
+			c: Config{
+				ConfigFile: diag.ConfigFile{
+					ConfigKeys: diag.ConfigKeys{
+						DevToken: "devToken",
+					},
+				},
+			},
+			ts: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(r.Header["Developer-Token"][0]))
+			})),
+			want: "devToken",
+		},
+		{
+			desc: "login-customer-id is in HTTP header",
+			c: Config{
+				ConfigFile: diag.ConfigFile{
+					ConfigKeys: diag.ConfigKeys{
+						LoginCustomerID: "loginID",
+					},
+				},
+			},
+			ts: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(r.Header["Login-Customer-Id"][0]))
+			})),
+			want: "loginID",
+		},
+		{
+			desc: "Account info (JSON) is returned",
+			c:    Config{},
+			ts: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(`{"resourceName": "customers/1234567890", "id": "1234567890"}`))
+			})),
+			want: `{"resourceName": "customers/1234567890", "id": "1234567890"}`,
+		},
+		{
+			desc: "Error (JSON) is returned",
+			c:    Config{},
+			ts: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(`{"error": "This is an error"}`))
+			})),
+			want: "This is an error",
+		},
+	}
+
+	for _, tt := range tests {
+		apiURL = tt.ts.URL
+		defer tt.ts.Close()
+
+		buf, err := tt.c.getAccount(tt.ts.Client())
+		if err != nil && errstring(err) != tt.want {
+			t.Errorf("[%s] got: %s, want: %s", tt.desc, errstring(err), tt.want)
+		}
+
+		if buf != nil && buf.String() != tt.want {
+			t.Errorf("[%s] got: %s, want: %s", tt.desc, buf.String(), tt.want)
+		}
+	}
+}
+
 func TestReadCustomerID(t *testing.T) {
 	log.SetOutput(ioutil.Discard)
 
@@ -263,4 +333,11 @@ func TestReadCustomerID(t *testing.T) {
 			t.Errorf("[%s] got: %s, want: %s\n", test.desc, got, test.want)
 		}
 	}
+}
+
+func errstring(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return "nil"
 }
