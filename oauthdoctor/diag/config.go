@@ -17,6 +17,7 @@ package diag
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -46,15 +47,49 @@ const (
 	ClientSecret = "ClientSecret"
 	// RefreshToken allows the client to obtain a new access token.
 	RefreshToken = "RefreshToken"
+	// PrivateKeyPath is the filepath of a private key file for service account
+	PrivateKeyPath = "PrivateKeyPath"
+	// DelegatedAccount is the email to impersonate
+	DelegatedAccount = "DelegatedAccount"
+
+	// ProjectID is the Google Cloud console project ID.
+	ProjectID = "ProjectID"
+	// PrivateKeyID is the private key ID that represents the identity of your service account.
+	PrivateKeyID = "PrivateKeyID"
+	// PrivateKey is the encrypted private key that represents your identity of your service account.
+	PrivateKey = "PrivateKey"
+	// ClientEmail is the service account email.
+	ClientEmail = "ClientEmail"
+	// SAClientID is the client ID of your service account.
+	SAClientID = "SAClientID"
+	// ClientX509CertURL is the URL for x509 certificate.
+	ClientX509CertURL = "ClientX509CertURL"
+
+	// InstalledApp is the installed app type option for Google Ads API.
+	// Read https://developers.google.com/google-ads/api/docs/oauth/cloud-project#choose_an_application_type.
+	InstalledApp = "installed_app"
+	// Web is the web app type option for Google Ads API.
+	// Read https://developers.google.com/google-ads/api/docs/oauth/cloud-project#choose_an_application_type.
+	Web = "web"
+	// ServiceAccount allows server-to-server interactions between a web application and a Google service.
+	ServiceAccount = "service_account"
 )
 
 var (
 	// PIIWords is a slice of constant strings that indicate Personally Identifiable Information
-	PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken}
+	PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken, ProjectID, PrivateKeyID,
+		PrivateKey, ClientEmail, SAClientID, ClientX509CertURL}
 
 	// RequiredKeys are the key names used in the Language structure that defines
 	// the contents of a client library configuration file.
-	RequiredKeys = []string{DevToken, ClientID, ClientSecret, RefreshToken}
+	RequiredKeys = map[string][]string{
+		InstalledApp:   {DevToken, ClientID, ClientSecret, RefreshToken},
+		Web:            {DevToken, ClientID, ClientSecret},
+		ServiceAccount: {DevToken, PrivateKeyPath, DelegatedAccount},
+	}
+
+	devTokenRegex  = regexp.MustCompile("[[:alnum:]_\\-]+")
+	quotedStrRegex = regexp.MustCompile("[\\w\\-\\./_@~]+")
 )
 
 // Config is the collection of language specific elements.
@@ -66,19 +101,36 @@ type Config struct {
 
 // ConfigFile is the structure of a client configuration file.
 type ConfigFile struct {
-	Filename string
-	Filepath string
-	Lang     string
+	Filename  string
+	Filepath  string
+	Lang      string
+	OAuthType string
 	ConfigKeys
+	ServiceAccountInfo
 }
 
 // ConfigKeys are the keys in a client configuration file.
 type ConfigKeys struct {
-	ClientID        string
-	ClientSecret    string
-	DevToken        string
-	RefreshToken    string
-	LoginCustomerID string
+	ClientID         string
+	ClientSecret     string
+	DevToken         string
+	RefreshToken     string
+	LoginCustomerID  string
+	PrivateKeyPath   string
+	DelegatedAccount string
+}
+
+type ServiceAccountInfo struct {
+	Type                    string
+	ProjectID               string `json:"project_id"`
+	PrivateKeyID            string `json:"private_key_id"`
+	PrivateKey              string `json:"private_key"`
+	ClientEmail             string `json:"client_email"`
+	SAClientID              string `json:"client_id"`
+	AuthURI                 string `json:"auth_uri"`
+	TokenURI                string `json:"token_uri"`
+	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"`
+	ClientX509CertURL       string `json:"client_x509_cert_url"`
 }
 
 // Comment represents comment characters. If a comment is a line comment, RightMeta will be an empty string.
@@ -98,11 +150,14 @@ var Languages = map[string]Config{
 		Cfg: ConfigFile{
 			Filename: "ads.properties",
 			ConfigKeys: ConfigKeys{
-				ClientID:        "api.googleads.clientId",
-				ClientSecret:    "api.googleads.clientSecret",
-				DevToken:        "api.googleads.developerToken",
-				RefreshToken:    "api.googleads.refreshToken",
-				LoginCustomerID: "api.googleads.loginCustomerId"}}},
+				ClientID:         "api.googleads.clientId",
+				ClientSecret:     "api.googleads.clientSecret",
+				DevToken:         "api.googleads.developerToken",
+				RefreshToken:     "api.googleads.refreshToken",
+				LoginCustomerID:  "api.googleads.loginCustomerId",
+				PrivateKeyPath:   "api.googleads.jsonKeyFilePath",
+				DelegatedAccount: "api.googleads.serviceAccountUser",
+			}}},
 	"dotnet": {
 		Comment: Comment{
 			LeftMeta:  "<!--",
@@ -111,11 +166,14 @@ var Languages = map[string]Config{
 		Cfg: ConfigFile{
 			Filename: "App.Config",
 			ConfigKeys: ConfigKeys{
-				ClientID:        "OAuth2ClientId",
-				ClientSecret:    "OAuth2ClientSecret",
-				DevToken:        "DeveloperToken",
-				RefreshToken:    "OAuth2RefreshToken",
-				LoginCustomerID: "LoginCustomerId"}}},
+				ClientID:         "OAuth2ClientId",
+				ClientSecret:     "OAuth2ClientSecret",
+				DevToken:         "DeveloperToken",
+				RefreshToken:     "OAuth2RefreshToken",
+				LoginCustomerID:  "LoginCustomerId",
+				PrivateKeyPath:   "OAuth2SecretsJsonPath",
+				DelegatedAccount: "OAuth2PrnEmail",
+			}}},
 	"php": {
 		Comment: Comment{
 			LeftMeta: ";",
@@ -124,11 +182,14 @@ var Languages = map[string]Config{
 		Cfg: ConfigFile{
 			Filename: "google_ads_php.ini",
 			ConfigKeys: ConfigKeys{
-				ClientID:        "clientId",
-				ClientSecret:    "clientSecret",
-				DevToken:        "developerToken",
-				RefreshToken:    "refreshToken",
-				LoginCustomerID: "loginCustomerId"}}},
+				ClientID:         "clientId",
+				ClientSecret:     "clientSecret",
+				DevToken:         "developerToken",
+				RefreshToken:     "refreshToken",
+				LoginCustomerID:  "loginCustomerId",
+				PrivateKeyPath:   "jsonKeyFilePath",
+				DelegatedAccount: "impersonatedEmail",
+			}}},
 	"python": {
 		Comment: Comment{
 			LeftMeta: "#",
@@ -137,11 +198,14 @@ var Languages = map[string]Config{
 		Cfg: ConfigFile{
 			Filename: "google-ads.yaml",
 			ConfigKeys: ConfigKeys{
-				ClientID:        "client_id",
-				ClientSecret:    "client_secret",
-				DevToken:        "developer_token",
-				RefreshToken:    "refresh_token",
-				LoginCustomerID: "login_customer_id"}}},
+				ClientID:         "client_id",
+				ClientSecret:     "client_secret",
+				DevToken:         "developer_token",
+				RefreshToken:     "refresh_token",
+				LoginCustomerID:  "login_customer_id",
+				PrivateKeyPath:   "path_to_private_key_file",
+				DelegatedAccount: "delegated_account",
+			}}},
 	"ruby": {
 		Comment: Comment{
 			LeftMeta: "#",
@@ -150,11 +214,17 @@ var Languages = map[string]Config{
 		Cfg: ConfigFile{
 			Filename: "google_ads_config.rb",
 			ConfigKeys: ConfigKeys{
-				ClientID:        "c.client_id",
-				ClientSecret:    "c.client_secret",
-				DevToken:        "c.developer_token",
-				RefreshToken:    "c.refresh_token",
-				LoginCustomerID: "c.login_customer_id"}}}}
+				ClientID:         "c.client_id",
+				ClientSecret:     "c.client_secret",
+				DevToken:         "c.developer_token",
+				RefreshToken:     "c.refresh_token",
+				LoginCustomerID:  "c.login_customer_id",
+				PrivateKeyPath:   "c.keyfile",
+				DelegatedAccount: "c.impersonate",
+			},
+		},
+	},
+}
 
 // swapMap reverses the keys and values of m.
 func swapMap(m map[string]interface{}) map[string]string {
@@ -342,8 +412,7 @@ func parseKeyValueLine(c ConfigFile, line string) (string, string, error) {
 // findFirstValue returns the first value that contains alphanumeric
 // characters potentially with some special characters.
 func findFirstValue(k string) string {
-	quotedStr := regexp.MustCompile("[\\w\\-\\./_]+")
-	matches := quotedStr.FindAllString(k, -1)
+	matches := quotedStrRegex.FindAllString(k, -1)
 	if len(matches) > 0 {
 		return matches[0]
 	}
@@ -352,9 +421,10 @@ func findFirstValue(k string) string {
 
 // ParseKeyValueFile reads a configuration file with keys and values separated
 // by a language specific separator, and returns a ConfigFile.
-func ParseKeyValueFile(lang, filepath string) (c ConfigFile, err error) {
+func ParseKeyValueFile(lang, filepath, oauthType string) (c ConfigFile, err error) {
 	keyValue := make(map[string]string, 0)
-	c, _ = GetConfigFile(lang, filepath)
+	c = GetConfigFile(lang, filepath)
+	c.OAuthType = oauthType
 	separator := Languages[c.Lang].Separator
 	comment := Languages[c.Lang].Comment
 
@@ -387,14 +457,21 @@ func ParseKeyValueFile(lang, filepath string) (c ConfigFile, err error) {
 
 	c.UpdateConfigKeys(keyValue)
 
+	if c.PrivateKeyPath != "" {
+		if err := c.parseServiceAccJSON(); err != nil {
+			return c, err
+		}
+	}
+
 	return c, nil
 }
 
 // ParseXMLFile parses the file content given in filepath and returns
 // a ConfigFile struct with the given attributes in the file.
-func ParseXMLFile(filepath string) (c ConfigFile, err error) {
+func ParseXMLFile(filepath, oauthType string) (c ConfigFile, err error) {
 	var keyValue = make(map[string]string)
-	c, _ = GetConfigFile("dotnet", filepath)
+	c = GetConfigFile("dotnet", filepath)
+	c.OAuthType = oauthType
 
 	type Property struct {
 		Key   string `xml:"key,attr"`
@@ -406,15 +483,13 @@ func ParseXMLFile(filepath string) (c ConfigFile, err error) {
 		Properties []Property `xml:"GoogleAdsApi>add"`
 	}
 
-	f, err := os.Open(filepath)
+	input, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return c, err
 	}
-	defer f.Close()
 
-	inputBytes, _ := ioutil.ReadAll(f)
 	options := DotNetXML{}
-	err = xml.Unmarshal([]byte(inputBytes), &options)
+	err = xml.Unmarshal(input, &options)
 	if err != nil {
 		return c, err
 	}
@@ -425,7 +500,31 @@ func ParseXMLFile(filepath string) (c ConfigFile, err error) {
 
 	c.UpdateConfigKeys(keyValue)
 
+	if c.PrivateKeyPath != "" {
+		if err := c.parseServiceAccJSON(); err != nil {
+			return c, err
+		}
+	}
+
 	return c, nil
+}
+
+func (c *ConfigFile) parseServiceAccJSON() error {
+	if c.PrivateKeyPath == "" {
+		return fmt.Errorf("PrivateKeyPath in the config file is empty")
+	}
+
+	input, err := ioutil.ReadFile(c.PrivateKeyPath)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(input, &c.ServiceAccountInfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // IsPII returns true when the given string is PII (peronsal identifiable
@@ -437,7 +536,7 @@ func IsPII(s string) bool {
 // GetConfigFile returns a ConfigFile containing config filepath and filename.
 // When overridePath is an empty string, the function will retrieve the filepath and
 // filename from the default location in the file system.
-func GetConfigFile(lang, overridePath string) (ConfigFile, error) {
+func GetConfigFile(lang, overridePath string) ConfigFile {
 	if overridePath == "" {
 		return GetDefaultConfigFile(lang)
 	}
@@ -446,17 +545,17 @@ func GetConfigFile(lang, overridePath string) (ConfigFile, error) {
 	return ConfigFile{
 		Filepath: filepath.Dir(overridePath),
 		Filename: filepath.Base(overridePath),
-		Lang:     lang}, nil
+		Lang:     lang}
 }
 
 // GetDefaultConfigFile returns the default config path of Google Ads API client
 // library.
-func GetDefaultConfigFile(lang string) (ConfigFile, error) {
+func GetDefaultConfigFile(lang string) ConfigFile {
 	var cfg ConfigFile
 
 	usr, err := user.Current()
 	if err != nil {
-		return cfg, err
+		log.Fatalf("Cannot get default config file: %s", err)
 	}
 
 	if _, ok := Languages[lang]; ok {
@@ -465,14 +564,20 @@ func GetDefaultConfigFile(lang string) (ConfigFile, error) {
 		cfg.Lang = lang
 	}
 
-	return cfg, nil
+	return cfg
 }
 
 // Print prints out the keys and values in ConfigFile.ConfigKeys.
 func (c *ConfigFile) Print(hidePII bool) {
 	log.Printf("Config keys and values:")
-	keys := reflect.TypeOf(c.ConfigKeys)
-	vals := reflect.ValueOf(c.ConfigKeys)
+	print(c.ConfigKeys, hidePII)
+	log.Printf("Service account JSON keys and values:")
+	print(c.ServiceAccountInfo, hidePII)
+}
+
+func print(mapping interface{}, hidePII bool) {
+	keys := reflect.TypeOf(mapping)
+	vals := reflect.ValueOf(mapping)
 	for i := 0; i < keys.NumField(); i++ {
 		k := keys.Field(i).Name
 		v := vals.Field(i)
@@ -493,24 +598,19 @@ func (c *ConfigFile) Validate() (bool, error) {
 	var errMsg string
 	var err error
 
-	re := regexp.MustCompile("[[:alnum:]_\\-]+")
-	if !re.MatchString(c.DevToken) {
+	if !devTokenRegex.MatchString(c.DevToken) {
 		valid = false
 		errMsg += fmt.Sprintf("Dev token is invalid. Value: %s\n", c.DevToken)
 	}
 
-	if !strings.HasSuffix(c.ClientID, "apps.googleusercontent.com") {
+	if c.OAuthType != ServiceAccount && !strings.HasSuffix(c.ClientID, "apps.googleusercontent.com") {
 		valid = false
-		errMsg += fmt.Sprintf(
-			"ClientID does not end with apps.googleusercontent.com. Value: %s\n",
-			c.ClientID)
+		errMsg += fmt.Sprintf("ClientID does not end with apps.googleusercontent.com. Value: %s\n", c.ClientID)
 	}
 
 	if strings.Contains(c.LoginCustomerID, "-") {
 		valid = false
-		errMsg += fmt.Sprintf(
-			"LoginCustomerID cannot have dashes. Value: %s\n",
-			c.LoginCustomerID)
+		errMsg += fmt.Sprintf("LoginCustomerID cannot have dashes. Value: %s\n", c.LoginCustomerID)
 	}
 
 	keys := reflect.TypeOf(c.ConfigKeys)
@@ -519,7 +619,7 @@ func (c *ConfigFile) Validate() (bool, error) {
 		k := keys.Field(i).Name
 		v := vals.Field(i)
 
-		if Contains(RequiredKeys, k) && v.String() == "" {
+		if Contains(RequiredKeys[c.OAuthType], k) && v.String() == "" {
 			valid = false
 			errMsg += fmt.Sprintf("%s is empty.\n", k)
 		}

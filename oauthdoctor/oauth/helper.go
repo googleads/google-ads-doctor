@@ -46,13 +46,6 @@ const (
 	UnknownError
 )
 
-const (
-	// Web is the constant that identifies the oauth path.
-	Web string = "web"
-	// InstalledApp is the constant that identifies the installed application oauth path.
-	InstalledApp string = "installed_app"
-)
-
 // Config is a required configuration for diagnosing the OAuth2 flow based on
 // the client library configuration.
 type Config struct {
@@ -85,10 +78,12 @@ var (
 // client libraries.
 func (c *Config) SimulateOAuthFlow() {
 	switch c.OAuthType {
-	case Web:
+	case diag.Web:
 		c.simulateWebFlow()
-	case InstalledApp:
+	case diag.InstalledApp:
 		c.simulateAppFlow()
+	case diag.ServiceAccount:
+		c.simulateServiceAccFlow()
 	}
 }
 
