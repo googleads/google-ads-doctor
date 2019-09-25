@@ -269,8 +269,7 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 		req.Header.Set("login-customer-id", c.ConfigFile.LoginCustomerID)
 	}
 
-	var resp *http.Response
-	resp, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
