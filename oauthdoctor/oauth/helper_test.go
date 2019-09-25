@@ -37,32 +37,32 @@ func TestDiagnose(t *testing.T) {
 	}{
 		{
 			desc:     "Check AccessNotPermittedForManagerAccount",
-			filepath: "./testdata/no_manager_access.json",
+			filepath: "testdata/no_manager_access.json",
 			want:     "manager access",
 		},
 		{
 			desc:     "Check GoogleAdsAPIDisabled",
-			filepath: "./testdata/api_disabled.json",
+			filepath: "testdata/api_disabled.json",
 			want:     "enable Google Ads API",
 		},
 		{
 			desc:     "Check MissingDevToken",
-			filepath: "./testdata/no_dev_token.json",
+			filepath: "testdata/no_dev_token.json",
 			want:     "developer token is missing",
 		},
 		{
 			desc:     "Check Unauthenticated",
-			filepath: "./testdata/unauthenticated.json",
+			filepath: "testdata/unauthenticated.json",
 			want:     "login email may not have access",
 		},
 		{
 			desc:     "Check InvalidRefreshToken",
-			filepath: "./testdata/permission_denied.json",
+			filepath: "testdata/permission_denied.json",
 			want:     "refresh token may be invalid",
 		},
 		{
 			desc:     "Check undetermined error",
-			filepath: "./testdata/undetermined_error.json",
+			filepath: "testdata/undetermined_error.json",
 			want:     "cannot determine the exact error",
 		},
 	}
