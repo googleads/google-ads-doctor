@@ -14,14 +14,11 @@ import (
 func setupFakeOAuthServer() (*httptest.Server, func()) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		// Should return authorization code back to the user
-		w.Write([]byte("code=mockauthcode"))
+		w.Write([]byte("code=fakeauthcode"))
 	})
 
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-		// Should return acccess token back to the user
-		w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-		w.Write([]byte("access_token=mocktoken&scope=user&token_type=bearer"))
+		w.Write([]byte("access_token=fakeaccesstoken&scope=user&token_type=bearer"))
 	})
 
 	server := httptest.NewServer(mux)
@@ -104,12 +101,10 @@ func TestGenAuthCode(t *testing.T) {
 		want  string
 	}{
 		{
-			desc:  "Windows",
 			input: "windows",
 			want:  "You are running Windows",
 		},
 		{
-			desc:  "Linux",
 			input: "linux",
 			want:  "Copy",
 		},
@@ -118,8 +113,7 @@ func TestGenAuthCode(t *testing.T) {
 	for _, tt := range tests {
 		got := genAuthCodePrompt(tt.input)
 		if !strings.HasPrefix(got, tt.want) {
-			t.Errorf("\n%s\nprompt does not match operating system got=%s\nwant=%s\ninput=%s\n",
-				tt.desc, got, tt.want, tt.input)
+			t.Errorf("genAutCodePrompt(%s) got=%s\nwant=%s", tt.input, got, tt.want)
 		}
 	}
 }
