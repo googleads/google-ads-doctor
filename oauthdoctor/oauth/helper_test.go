@@ -301,10 +301,8 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestReadCustomerID(t *testing.T) {
-	log.SetOutput(ioutil.Discard)
-
-	original := readStdin
-	defer func() { readStdin = original }()
+	enableStdio := disableStdio(t)
+	defer enableStdio()
 
 	tests := []struct {
 		desc  string

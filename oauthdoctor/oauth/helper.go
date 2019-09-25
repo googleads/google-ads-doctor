@@ -229,6 +229,8 @@ func replaceRefreshToken(c ConfigWriter, refreshToken string) {
 	}
 }
 
+var oauthEndpoint = google.Endpoint
+
 // oauth2Conf creates a corresponding OAuth2 config struct based on the
 // given configuration details. This is only applicable when a refresh token
 // is not given.
@@ -238,7 +240,7 @@ func (c *Config) oauth2Conf(redirectURL string) *oauth2.Config {
 		ClientSecret: c.ConfigFile.ClientSecret,
 		RedirectURL:  redirectURL,
 		Scopes:       []string{"https://www.googleapis.com/auth/adwords"},
-		Endpoint:     google.Endpoint,
+		Endpoint:     oauthEndpoint,
 	}
 }
 
@@ -280,6 +282,10 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 
 	var jsonBody map[string]interface{}
 	json.Unmarshal(buf.Bytes(), &jsonBody)
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("A HTTP Status (%s) is returned while calling %s", resp.Status, apiURL+c.CustomerID)
+	}
 
 	if jsonBody["error"] != nil {
 		return nil, fmt.Errorf(jsonBody["error"].(string))
