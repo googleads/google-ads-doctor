@@ -149,8 +149,8 @@ func (c *Config) diagnose(err error) {
 
 	switch c.decodeError(err) {
 	case AccessNotPermittedForManagerAccount:
-		log.Print("ERROR: Your credentials are not sufficient to access to a " +
-			"manager account.\nPlease login with a Google Ads account with manager access.")
+		log.Print("ERROR: Your credentials are not permitted to access to a manager account." +
+			"\nPlease create your credentials with a Google Ads account with manager access.")
 	case GoogleAdsAPIDisabled:
 		log.Print("Press <Enter> to continue after you enable Google Ads API")
 		readStdin()
@@ -202,7 +202,7 @@ func replaceCloudCredentials(c ConfigWriter) {
 // replaceDevToken guides the user to retrieve their developer token and
 // enter it at the prompt. The entered value will replace the existing
 // developer token in the client library configuration file.
-func replaceDevToken(c ConfigWriter) {
+var replaceDevToken = func(c ConfigWriter) {
 	log.Print("Please follow this guide to retrieve your developer token: " +
 		"https://developers.google.com/adwords/api/docs/guides/signup#step-2")
 	log.Print("Pleae enter a new Developer Token here and it will replace " +

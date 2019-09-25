@@ -1,0 +1,24 @@
+{
+  "error": {
+    "code": 403,
+    "message": "The caller does not have permission",
+    "status": "PERMISSION_DENIED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.ads.googleads.v0.errors.GoogleAdsFailure",
+        "errors": [
+          {
+            "errorCode": {
+              "authorizationError": "USER_PERMISSION_DENIED"
+            },
+            "message": "User doesn't have permission to access customer."
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.DebugInfo",
+        "detail": "[ORIGINAL ERROR] generic::permission_denied: User doesn't have permission to access customer. [google.rpc.error_details_ext] { details { type_url: \"type.googleapis.com/google.ads.googleads.v0.errors.GoogleAdsFailure\" value: \"\\n6\\n\\002H\\002\\0220User doesn\\'t have permission to access customer.\" } }"
+      }
+    ]
+  }
+}
