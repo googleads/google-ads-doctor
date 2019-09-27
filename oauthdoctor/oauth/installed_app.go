@@ -20,15 +20,12 @@ package oauth
 // flow.
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 const (
@@ -111,10 +108,7 @@ func (c *Config) genAuthCode() string {
 	log.Print(genAuthCodePrompt(runtime.GOOS))
 	fmt.Print("Enter Code >> ")
 
-	reader := bufio.NewReader(os.Stdin)
-	code, _ := reader.ReadString('\n')
-
-	return code
+	return readStdin()
 }
 
 // genAuthCodePrompt returns the operating specific command prompt.
@@ -150,7 +144,7 @@ func (c *Config) connectWithRefreshToken() (*bytes.Buffer, error) {
 	conf := &oauth2.Config{
 		ClientID:     c.ConfigFile.ClientID,
 		ClientSecret: c.ConfigFile.ClientSecret,
-		Endpoint:     google.Endpoint,
+		Endpoint:     oauthEndpoint,
 	}
 	token := &oauth2.Token{RefreshToken: c.ConfigFile.RefreshToken}
 	client := conf.Client(oauth2.NoContext, token)
