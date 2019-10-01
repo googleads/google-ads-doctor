@@ -571,8 +571,11 @@ func GetDefaultConfigFile(lang string) ConfigFile {
 func (c *ConfigFile) Print(hidePII bool) {
 	log.Printf("Config keys and values:")
 	print(c.ConfigKeys, hidePII)
-	log.Printf("Service account JSON keys and values:")
-	print(c.ServiceAccountInfo, hidePII)
+
+	if c.OAuthType == ServiceAccount {
+		log.Printf("Service account JSON keys and values:")
+		print(c.ServiceAccountInfo, hidePII)
+	}
 }
 
 func print(mapping interface{}, hidePII bool) {

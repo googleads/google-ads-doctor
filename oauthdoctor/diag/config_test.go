@@ -247,6 +247,7 @@ func TestPrint(t *testing.T) {
 		{
 			desc: "Print service account info",
 			cfg: ConfigFile{
+				OAuthType: ServiceAccount,
 				ServiceAccountInfo: ServiceAccountInfo{
 					PrivateKeyID: "someKeyID",
 				},
@@ -257,6 +258,7 @@ func TestPrint(t *testing.T) {
 		{
 			desc: "Hide sensitive service account info",
 			cfg: ConfigFile{
+				OAuthType: ServiceAccount,
 				ServiceAccountInfo: ServiceAccountInfo{
 					PrivateKeyID: "someKeyID",
 				},

@@ -44,6 +44,8 @@ const (
 	Unauthenticated
 	Unauthorized
 	UnknownError
+
+	GoogleAdsApiScope = "https://www.googleapis.com/auth/adwords"
 )
 
 // Config is a required configuration for diagnosing the OAuth2 flow based on
@@ -149,7 +151,7 @@ func (c *Config) diagnose(err error) {
 		log.Print("Press <Enter> to continue after you enable Google Ads API")
 		readStdin()
 	case InvalidClientInfo:
-		log.Print("ERROR: Your client ID and/or secret may be invalid.")
+		log.Print("ERROR: Your client ID and/or client secret may be invalid.")
 		replaceCloudCredentials(&c.ConfigFile)
 	case InvalidRefreshToken, Unauthorized:
 		log.Print("ERROR: Your refresh token may be invalid.")
@@ -161,9 +163,16 @@ func (c *Config) diagnose(err error) {
 	case InvalidCustomerID:
 		log.Print("ERROR: You customer ID is invalid.")
 	default:
-		log.Print("ERROR: Your credentials are invalid but we cannot determine " +
-			"the exact error. Please verify your developer token, client ID, " +
-			"client secret and refresh token.")
+		var helperText string
+		switch c.ConfigFile.OAuthType {
+		case diag.ServiceAccount:
+			helperText = "Please verify the path of JSON key file and impersonate email (or delegated email)."
+		case diag.Web:
+			helperText = "Please verify your developer token, client ID and client secret."
+		case diag.InstalledApp:
+			helperText = "Please verify your developer token, client ID, client secret and refresh token."
+		}
+		log.Print("ERROR: Your credentials are invalid but we cannot determine the exact error. " + helperText)
 	}
 }
 
@@ -234,7 +243,7 @@ func (c *Config) oauth2Conf(redirectURL string) *oauth2.Config {
 		ClientID:     c.ConfigFile.ClientID,
 		ClientSecret: c.ConfigFile.ClientSecret,
 		RedirectURL:  redirectURL,
-		Scopes:       []string{"https://www.googleapis.com/auth/adwords"},
+		Scopes:       []string{GoogleAdsApiScope},
 		Endpoint:     oauthEndpoint,
 	}
 }
