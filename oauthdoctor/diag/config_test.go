@@ -611,7 +611,7 @@ func TestParseServiceAccJSON(t *testing.T) {
 				PrivateKeyID:            "00000iabcadfad",
 				PrivateKey:              "-----BEGIN PRIVATE KEY-----\nabcdefg-----END PRIVATE KEY-----\n",
 				ClientEmail:             "example@some.website.com",
-				SAClientID:              "11111",
+				ClientID:                "11111",
 				AuthURI:                 "https://accounts.google.com/o/oauth2/auth",
 				TokenURI:                "https://oauth2.googleapis.com/token",
 				AuthProviderX509CertURL: "https://www.googleapis.com/oauth2/v1/certs",

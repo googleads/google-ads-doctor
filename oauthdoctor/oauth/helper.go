@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strings"
 
@@ -240,7 +241,7 @@ var oauthEndpoint = google.Endpoint
 // is not given.
 func (c *Config) oauth2Conf(redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     c.ConfigFile.ClientID,
+		ClientID:     c.ConfigFile.ConfigKeys.ClientID,
 		ClientSecret: c.ConfigFile.ClientSecret,
 		RedirectURL:  redirectURL,
 		Scopes:       []string{GoogleAdsApiScope},
@@ -275,6 +276,14 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 		req.Header.Set("login-customer-id", c.ConfigFile.LoginCustomerID)
 	}
 
+	if c.Verbose {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			log.Printf("Error printing HTTP request: %s", err)
+		}
+		log.Printf("Making a HTTP Request to Google Ads API:\n%v\n", c.sanitizeOutput(string(dump)))
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -296,6 +305,10 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	}
 
 	return buf, nil
+}
+
+func (c *Config) sanitizeOutput(s string) string {
+	return strings.ReplaceAll(s, c.ConfigFile.DevToken, "REDACTED")
 }
 
 // ReadCustomerID retrieves the CID from stdin.

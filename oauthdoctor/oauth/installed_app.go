@@ -142,7 +142,7 @@ func (c *Config) connectWithNoRefreshToken() (*bytes.Buffer, string, error) {
 // with OAuth and get the account info.
 func (c *Config) connectWithRefreshToken() (*bytes.Buffer, error) {
 	conf := &oauth2.Config{
-		ClientID:     c.ConfigFile.ClientID,
+		ClientID:     c.ConfigFile.ConfigKeys.ClientID,
 		ClientSecret: c.ConfigFile.ClientSecret,
 		Endpoint:     oauthEndpoint,
 	}

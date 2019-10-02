@@ -60,8 +60,6 @@ const (
 	PrivateKey = "PrivateKey"
 	// ClientEmail is the service account email.
 	ClientEmail = "ClientEmail"
-	// SAClientID is the client ID of your service account.
-	SAClientID = "SAClientID"
 	// ClientX509CertURL is the URL for x509 certificate.
 	ClientX509CertURL = "ClientX509CertURL"
 
@@ -78,7 +76,7 @@ const (
 var (
 	// PIIWords is a slice of constant strings that indicate Personally Identifiable Information
 	PIIWords = []string{DevToken, ClientID, ClientSecret, RefreshToken, ProjectID, PrivateKeyID,
-		PrivateKey, ClientEmail, SAClientID, ClientX509CertURL}
+		PrivateKey, ClientEmail, ClientX509CertURL}
 
 	// RequiredKeys are the key names used in the Language structure that defines
 	// the contents of a client library configuration file.
@@ -126,7 +124,7 @@ type ServiceAccountInfo struct {
 	PrivateKeyID            string `json:"private_key_id"`
 	PrivateKey              string `json:"private_key"`
 	ClientEmail             string `json:"client_email"`
-	SAClientID              string `json:"client_id"`
+	ClientID                string `json:"client_id"`
 	AuthURI                 string `json:"auth_uri"`
 	TokenURI                string `json:"token_uri"`
 	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"`
@@ -606,9 +604,9 @@ func (c *ConfigFile) Validate() (bool, error) {
 		errMsg += fmt.Sprintf("Dev token is invalid. Value: %s\n", c.DevToken)
 	}
 
-	if c.OAuthType != ServiceAccount && !strings.HasSuffix(c.ClientID, "apps.googleusercontent.com") {
+	if c.OAuthType != ServiceAccount && !strings.HasSuffix(c.ConfigKeys.ClientID, "apps.googleusercontent.com") {
 		valid = false
-		errMsg += fmt.Sprintf("ClientID does not end with apps.googleusercontent.com. Value: %s\n", c.ClientID)
+		errMsg += fmt.Sprintf("ClientID does not end with apps.googleusercontent.com. Value: %s\n", c.ConfigKeys.ClientID)
 	}
 
 	if strings.Contains(c.LoginCustomerID, "-") {
