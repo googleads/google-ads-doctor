@@ -42,6 +42,7 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "Everything passes",
 			cfg: ConfigFile{
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					DevToken:        goodDevToken,
 					ClientID:        goodClientID,
@@ -56,6 +57,7 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "Invalid DevToken",
 			cfg: ConfigFile{
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					DevToken:     "INSERT_DEV_TOKEN_HERE",
 					ClientID:     goodClientID,
@@ -69,6 +71,7 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "Invalid Client",
 			cfg: ConfigFile{
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					DevToken:     goodDevToken,
 					ClientID:     "randomClientID",
@@ -80,8 +83,9 @@ func TestValidate(t *testing.T) {
 			errstr: "ClientID",
 		},
 		{
-			desc: "Missing a required key",
+			desc: "Installed App flow: Missing a required key",
 			cfg: ConfigFile{
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					DevToken:     goodDevToken,
 					ClientID:     goodClientID,
@@ -92,8 +96,21 @@ func TestValidate(t *testing.T) {
 			errstr: "ClientSecret",
 		},
 		{
+			desc: "Service account flow: Missing a required key",
+			cfg: ConfigFile{
+				OAuthType: ServiceAccount,
+				ConfigKeys: ConfigKeys{
+					DevToken:       goodDevToken,
+					PrivateKeyPath: "GoodPath",
+				},
+			},
+			want:   false,
+			errstr: "DelegatedAccount",
+		},
+		{
 			desc: "LoginCustomerID cannot have dashes",
 			cfg: ConfigFile{
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					LoginCustomerID: "111-111-1111",
 				},
@@ -182,14 +199,10 @@ func TestGetConfigFile(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := GetConfigFile(test.lang, test.filepath)
+		got := GetConfigFile(test.lang, test.filepath)
 
 		if got != test.want {
 			t.Errorf("%s\ngot: %s\nwant: %s", test.desc, got, test.want)
-		}
-
-		if err != nil {
-			t.Errorf("%s\nError: %s", test.desc, err)
 		}
 	}
 }
@@ -215,7 +228,6 @@ func TestPrint(t *testing.T) {
 			desc: "Print non-sensitive info with hidePII=true",
 			cfg: ConfigFile{
 				ConfigKeys: ConfigKeys{
-					ClientID:        "someClientID",
 					LoginCustomerID: "1234567890",
 				},
 			},
@@ -223,10 +235,32 @@ func TestPrint(t *testing.T) {
 			want:    "1234567890",
 		},
 		{
-			desc: "Hide sensitive info",
+			desc: "Hide sensitive info in config file",
 			cfg: ConfigFile{
 				ConfigKeys: ConfigKeys{
 					ClientID: "someClientID",
+				},
+			},
+			hidePII: true,
+			want:    "******",
+		},
+		{
+			desc: "Print service account info",
+			cfg: ConfigFile{
+				OAuthType: ServiceAccount,
+				ServiceAccountInfo: ServiceAccountInfo{
+					PrivateKeyID: "someKeyID",
+				},
+			},
+			hidePII: false,
+			want:    "someKeyID",
+		},
+		{
+			desc: "Hide sensitive service account info",
+			cfg: ConfigFile{
+				OAuthType: ServiceAccount,
+				ServiceAccountInfo: ServiceAccountInfo{
+					PrivateKeyID: "someKeyID",
 				},
 			},
 			hidePII: true,
@@ -415,25 +449,28 @@ func TestParseKeyValueFile(t *testing.T) {
 			configPath: filepath.Join(dir, "testdata", "python_config"),
 			lang:       "python",
 			want: ConfigFile{
-				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "python_config",
-				Lang:     "python",
+				Filepath:  filepath.Join(dir, "testdata"),
+				Filename:  "python_config",
+				Lang:      "python",
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
-					ClientID:     "0123456789-GoodClientID.apps.googleusercontent.com",
-					ClientSecret: "GoodClientSecret",
-					DevToken:     "GoodDevToken",
-					RefreshToken: "1/PG1Ap6P-Good_Refresh_Token",
+					ClientID:         "0123456789-GoodClientID.apps.googleusercontent.com",
+					ClientSecret:     "GoodClientSecret",
+					DevToken:         "GoodDevToken",
+					RefreshToken:     "1/PG1Ap6P-Good_Refresh_Token",
+					DelegatedAccount: "example@some.web.site.com",
 				},
 			},
 		},
 		{
-			desc:       "(Ruby with comments) Missing required config keys",
+			desc:       "(Ruby) Parses with comments and non-supported config",
 			configPath: filepath.Join(dir, "testdata", "ruby_config"),
 			lang:       "ruby",
 			want: ConfigFile{
-				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "ruby_config",
-				Lang:     "ruby",
+				Filepath:  filepath.Join(dir, "testdata"),
+				Filename:  "ruby_config",
+				Lang:      "ruby",
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					ClientID: "GoodClientID",
 				},
@@ -444,9 +481,10 @@ func TestParseKeyValueFile(t *testing.T) {
 			configPath: filepath.Join(dir, "testdata", "php_config"),
 			lang:       "php",
 			want: ConfigFile{
-				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "php_config",
-				Lang:     "php",
+				Filepath:  filepath.Join(dir, "testdata"),
+				Filename:  "php_config",
+				Lang:      "php",
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					ClientID:     "GoodClientID",
 					ClientSecret: "GoodClientSecret",
@@ -460,9 +498,10 @@ func TestParseKeyValueFile(t *testing.T) {
 			configPath: filepath.Join(dir, "testdata", "java_config"),
 			lang:       "java",
 			want: ConfigFile{
-				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "java_config",
-				Lang:     "java",
+				Filepath:  filepath.Join(dir, "testdata"),
+				Filename:  "java_config",
+				Lang:      "java",
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
 					ClientID:     "GoodClientID",
 					ClientSecret: "GoodClientSecret",
@@ -474,7 +513,7 @@ func TestParseKeyValueFile(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := ParseKeyValueFile(test.lang, test.configPath)
+		got, err := ParseKeyValueFile(test.lang, test.configPath, InstalledApp)
 
 		if diff := pretty.Compare(test.want, got); diff != "" {
 			t.Errorf("ParseKeyValueFile(%s, %s):\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
@@ -482,7 +521,7 @@ func TestParseKeyValueFile(t *testing.T) {
 		}
 
 		if err != nil {
-			t.Errorf("%s\nError: %s", test.desc, errstring(err))
+			t.Errorf("[%s] Error: %s", test.desc, errstring(err))
 		}
 	}
 }
@@ -505,14 +544,17 @@ func TestParseXMLFile(t *testing.T) {
 			configPath: filepath.Join(dir, "testdata", "dotnet_config1"),
 			lang:       "dotnet",
 			want: ConfigFile{
-				Filepath: filepath.Join(dir, "testdata"),
-				Filename: "dotnet_config1",
-				Lang:     "dotnet",
+				Filepath:  filepath.Join(dir, "testdata"),
+				Filename:  "dotnet_config1",
+				Lang:      "dotnet",
+				OAuthType: InstalledApp,
 				ConfigKeys: ConfigKeys{
-					ClientID:     "0123456789-GoodClientID.apps.googleusercontent.com",
-					ClientSecret: "GoodClientSecret",
-					DevToken:     "GoodDevToken",
-					RefreshToken: "1/PG1Ap6P-Good_Refresh_Token",
+					ClientID:         "0123456789-GoodClientID.apps.googleusercontent.com",
+					ClientSecret:     "GoodClientSecret",
+					DevToken:         "GoodDevToken",
+					RefreshToken:     "1/PG1Ap6P-Good_Refresh_Token",
+					PrivateKeyPath:   "GoodPath",
+					DelegatedAccount: "example@some.website.com",
 				},
 			},
 		},
@@ -520,20 +562,84 @@ func TestParseXMLFile(t *testing.T) {
 			desc:       "(.NET) Malformed XML",
 			configPath: filepath.Join(dir, "testdata", "dotnet_config2"),
 			lang:       "dotnet",
-			errstr:     "XML syntax error",
+			want: ConfigFile{
+				Filepath:  filepath.Join(dir, "testdata"),
+				Filename:  "dotnet_config2",
+				Lang:      "dotnet",
+				OAuthType: InstalledApp,
+			},
+			errstr: "XML syntax error",
 		},
 	}
 
 	for _, test := range tests {
-		got, err := ParseXMLFile(test.configPath)
+		got, err := ParseXMLFile(test.configPath, InstalledApp)
+
+		if diff := pretty.Compare(test.want, got); diff != "" {
+			t.Errorf("ParseXMLFile(%s):\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
+				test.configPath, test.desc, diff)
+		}
 
 		if err != nil && !strings.Contains(err.Error(), test.errstr) {
 			t.Errorf("%s\nParseXMLFile(%s):\nError: %s", test.desc, test.configPath, errstring(err))
-		} else if err == nil {
-			if diff := pretty.Compare(test.want, got); diff != "" {
-				t.Errorf("ParseXMLFile(%s):\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
-					test.configPath, test.desc, diff)
-			}
+		}
+	}
+}
+
+func TestParseServiceAccJSON(t *testing.T) {
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Errorf("Error getting current dir: %s", err)
+	}
+
+	tests := []struct {
+		desc   string
+		c      ConfigFile
+		want   ServiceAccountInfo
+		errstr string
+	}{
+		{
+			desc: "Successfully parses service account JSON",
+			c: ConfigFile{
+				ConfigKeys: ConfigKeys{
+					PrivateKeyPath: filepath.Join(dir, "testdata", "service_account.json"),
+				},
+			},
+			want: ServiceAccountInfo{
+				Type:                    "service_account",
+				ProjectID:               "project-1234567",
+				PrivateKeyID:            "00000iabcadfad",
+				PrivateKey:              "-----BEGIN PRIVATE KEY-----\nabcdefg-----END PRIVATE KEY-----\n",
+				ClientEmail:             "example@some.website.com",
+				ClientID:                "11111",
+				AuthURI:                 "https://accounts.google.com/o/oauth2/auth",
+				TokenURI:                "https://oauth2.googleapis.com/token",
+				AuthProviderX509CertURL: "https://www.googleapis.com/oauth2/v1/certs",
+				ClientX509CertURL:       "https://www.googleapis.com/something",
+			},
+		},
+		{
+			desc: "Cannot read JSON file",
+			c: ConfigFile{
+				ConfigKeys: ConfigKeys{
+					PrivateKeyPath: "/tmp/this/is/my/path",
+				},
+			},
+			want:   ServiceAccountInfo{},
+			errstr: "no such file or directory",
+		},
+	}
+
+	for _, test := range tests {
+		err := test.c.parseServiceAccJSON()
+
+		if diff := pretty.Compare(test.want, test.c.ServiceAccountInfo); diff != "" {
+			t.Errorf("parseServiceAccJSON():\nTest Case: %s\nReturned diff (-want -> +got):\n%s",
+				test.desc, diff)
+		}
+
+		if err != nil && !strings.Contains(errstring(err), test.errstr) {
+			t.Errorf("[%s] Error: %s", test.desc, errstring(err))
 		}
 	}
 }

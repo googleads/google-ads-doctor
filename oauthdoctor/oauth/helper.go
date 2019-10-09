@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strings"
 
@@ -44,13 +45,8 @@ const (
 	Unauthenticated
 	Unauthorized
 	UnknownError
-)
 
-const (
-	// Web is the constant that identifies the oauth path.
-	Web string = "web"
-	// InstalledApp is the constant that identifies the installed application oauth path.
-	InstalledApp string = "installed_app"
+	GoogleAdsApiScope = "https://www.googleapis.com/auth/adwords"
 )
 
 // Config is a required configuration for diagnosing the OAuth2 flow based on
@@ -85,10 +81,12 @@ var (
 // client libraries.
 func (c *Config) SimulateOAuthFlow() {
 	switch c.OAuthType {
-	case Web:
+	case diag.Web:
 		c.simulateWebFlow()
-	case InstalledApp:
+	case diag.InstalledApp:
 		c.simulateAppFlow()
+	case diag.ServiceAccount:
+		c.simulateServiceAccFlow()
 	}
 }
 
@@ -154,7 +152,7 @@ func (c *Config) diagnose(err error) {
 		log.Print("Press <Enter> to continue after you enable Google Ads API")
 		readStdin()
 	case InvalidClientInfo:
-		log.Print("ERROR: Your client ID and/or secret may be invalid.")
+		log.Print("ERROR: Your client ID and/or client secret may be invalid.")
 		replaceCloudCredentials(&c.ConfigFile)
 	case InvalidRefreshToken, Unauthorized:
 		log.Print("ERROR: Your refresh token may be invalid.")
@@ -166,9 +164,16 @@ func (c *Config) diagnose(err error) {
 	case InvalidCustomerID:
 		log.Print("ERROR: You customer ID is invalid.")
 	default:
-		log.Print("ERROR: Your credentials are invalid but we cannot determine " +
-			"the exact error. Please verify your developer token, client ID, " +
-			"client secret and refresh token.")
+		var helperText string
+		switch c.ConfigFile.OAuthType {
+		case diag.ServiceAccount:
+			helperText = "Please verify the path of JSON key file and impersonate email (or delegated email)."
+		case diag.Web:
+			helperText = "Please verify your developer token, client ID and client secret."
+		case diag.InstalledApp:
+			helperText = "Please verify your developer token, client ID, client secret and refresh token."
+		}
+		log.Print("ERROR: Your credentials are invalid but we cannot determine the exact error. " + helperText)
 	}
 }
 
@@ -236,10 +241,10 @@ var oauthEndpoint = google.Endpoint
 // is not given.
 func (c *Config) oauth2Conf(redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     c.ConfigFile.ClientID,
+		ClientID:     c.ConfigFile.ConfigKeys.ClientID,
 		ClientSecret: c.ConfigFile.ClientSecret,
 		RedirectURL:  redirectURL,
-		Scopes:       []string{"https://www.googleapis.com/auth/adwords"},
+		Scopes:       []string{GoogleAdsApiScope},
 		Endpoint:     oauthEndpoint,
 	}
 }
@@ -271,6 +276,14 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 		req.Header.Set("login-customer-id", c.ConfigFile.LoginCustomerID)
 	}
 
+	if c.Verbose {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			log.Printf("Error printing HTTP request: %s", err)
+		}
+		log.Printf("Making a HTTP Request to Google Ads API:\n%v\n", c.sanitizeOutput(string(dump)))
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -292,6 +305,10 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	}
 
 	return buf, nil
+}
+
+func (c *Config) sanitizeOutput(s string) string {
+	return strings.ReplaceAll(s, c.ConfigFile.DevToken, "REDACTED")
 }
 
 // ReadCustomerID retrieves the CID from stdin.

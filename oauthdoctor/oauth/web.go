@@ -68,10 +68,10 @@ func (c *Config) simulateWebFlow() {
 // received in the background process, the command line will continue the
 // simulation process.
 func (c *Config) connectWebFlow() (*bytes.Buffer, error) {
-	log.Print("Verify \"Authorized redirect URIs\"=localhost:8080 in " +
-		"your OAuth 2.0 client ID in Google cloud project before you proceed. " +
-		"Follow this guide for further instructions: " +
-		"https://developers.google.com/google-ads/api/docs/oauth/cloud-project")
+	log.Print("You will need to enter the URL http://localhost:8080 as a valid " +
+		"redirect URI in your Google APIs Console's project (https://console.developers.google.com/apis/library). " +
+		"Please follow this guide (https://developers.google.com/google-ads/api/docs/oauth/cloud-project) " +
+		"for further instructions.")
 	conf := c.oauth2Conf("http://localhost:8080")
 
 	// Redirect user to Google's consent page to ask for permission
@@ -81,7 +81,7 @@ func (c *Config) connectWebFlow() (*bytes.Buffer, error) {
 
 	srv := runServer()
 
-	code, _ := <-authCode
+	code := <-authCode
 
 	srv.Shutdown(context.Background())
 
@@ -106,6 +106,6 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	if code != "" {
 		authCode <- code
 		log.Print("OAuth code received by the HTTP server handler: " + code)
-		fmt.Fprintf(w, "Auth code received by diagnose-googleads tool")
+		fmt.Fprintf(w, "Auth code received")
 	}
 }

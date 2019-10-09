@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/googleads/google-ads-doctor/oauthdoctor/diag"
@@ -26,7 +25,7 @@ import (
 )
 
 var (
-	oauthTypes = []string{"installed_app", "web"}
+	oauthTypes = []string{diag.InstalledApp, diag.Web, diag.ServiceAccount}
 	language   = flag.String("language", "", "Required: The programming language of Google Ads API client library")
 	oauthType  = flag.String("oauthtype", "Required: The OAuth2 type for Google Ads API.", fmt.Sprintf("Values: %s", strings.Join(oauthTypes, ", ")))
 	configPath = flag.String("configpath", "", "Optional: An absolute file path for Google Ads API configuration file")
@@ -72,11 +71,8 @@ func main() {
 	}
 
 	// Verify the existence of the config file
-	cfg, err := diag.GetConfigFile(language, *configPath)
-	if err != nil {
-		log.Fatalf("Cannot get default config path: %s\n", err)
-	}
-	*configPath = filepath.Join(cfg.Filepath, cfg.Filename)
+	cfg := diag.GetConfigFile(language, *configPath)
+	*configPath = cfg.GetFilepath()
 	if _, err := os.Stat(*configPath); os.IsNotExist(err) {
 		log.Fatalf("Cannot find config file (%s): %s\n", *configPath, err)
 	}
@@ -87,12 +83,13 @@ func main() {
 		log.Fatalf("OAuth type not supported: %s", *oauthType)
 	}
 
+	var err error
 	// Parse config file and get a map of key:value
 	switch language {
 	case "dotnet":
-		cfg, err = diag.ParseXMLFile(*configPath)
+		cfg, err = diag.ParseXMLFile(*configPath, *oauthType)
 	default:
-		cfg, err = diag.ParseKeyValueFile(language, *configPath)
+		cfg, err = diag.ParseKeyValueFile(language, *configPath, *oauthType)
 	}
 	if err != nil {
 		log.Fatalf("Cannot parse %s: %s", *configPath, err)

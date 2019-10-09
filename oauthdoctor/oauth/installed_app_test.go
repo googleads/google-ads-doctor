@@ -18,7 +18,11 @@ func setupFakeOAuthServer() (*httptest.Server, func()) {
 	})
 
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("access_token=fakeaccesstoken&scope=user&token_type=bearer"))
+		w.Header().Add("Content-Type", "application/json")
+		w.Write([]byte(`{
+			"access_token":"fakeaccesstoken",
+			"refresh_token":"fakerefreshtoken",
+			"token_type":"bearer"}`))
 	})
 
 	server := httptest.NewServer(mux)

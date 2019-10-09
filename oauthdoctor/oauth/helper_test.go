@@ -124,9 +124,9 @@ func TestReplaceCloudCredentials(t *testing.T) {
 
 	replaceCloudCredentials(&test.c)
 
-	if test.c.cfgFile.ClientID != test.clientID || test.c.cfgFile.ClientSecret != test.clientSecret {
+	if test.c.cfgFile.ConfigKeys.ClientID != test.clientID || test.c.cfgFile.ClientSecret != test.clientSecret {
 		t.Errorf("[%s] got: (ClientID=%s, ClientSecret=%s), want: (ClientID=%s, ClientSecret=%s)",
-			test.desc, test.c.cfgFile.ClientID, test.c.cfgFile.ClientSecret, test.clientID, test.clientSecret)
+			test.desc, test.c.cfgFile.ConfigKeys.ClientID, test.c.cfgFile.ClientSecret, test.clientID, test.clientSecret)
 	}
 }
 

@@ -12,5 +12,7 @@
     <add key="OAuth2ClientSecret" value="GoodClientSecret" />
     <add key="OAuth2Mode" value="APPLICATION" />
     <add key="OAuth2RefreshToken" value="1/PG1Ap6P-Good_Refresh_Token" />
+    <add key="OAuth2SecretsJsonPath" value="GoodPath" />
+    <add key="OAuth2PrnEmail" value="example@some.website.com" />
   </GoogleAdsApi>
 </configuration>
