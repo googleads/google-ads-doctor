@@ -553,7 +553,7 @@ func GetDefaultConfigFile(lang string) ConfigFile {
 
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatalf("Cannot get default config file: %s", err)
+		log.Fatalf("Error finding user's home directory: %s", err)
 	}
 
 	if _, ok := Languages[lang]; ok {
