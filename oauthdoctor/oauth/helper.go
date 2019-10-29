@@ -273,7 +273,7 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", userAgent())
+	req.Header.Set("user-agent", userAgent())
 	req.Header.Set("developer-token", c.ConfigFile.DevToken)
 	if c.ConfigFile.LoginCustomerID != "" {
 		req.Header.Set("login-customer-id", c.ConfigFile.LoginCustomerID)
