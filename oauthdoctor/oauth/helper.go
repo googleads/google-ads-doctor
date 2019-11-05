@@ -310,6 +310,7 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
+// userAgent returns a User-Agent HTTP header for this tool.
 func userAgent() string {
 	ua := "google-ads-doctor/"
 	if appVersion != "" {
