@@ -300,6 +300,36 @@ func TestGetAccount(t *testing.T) {
 	}
 }
 
+func TestUserAgent(t *testing.T) {
+	tests := []struct {
+		desc  string
+		input string
+		want  string
+	}{
+		{
+			desc:  "Display with version",
+			input: "1.0.3",
+			want:  "google-ads-doctor/1.0.3",
+		},
+		{
+			desc:  "Display without version",
+			input: "",
+			want:  "google-ads-doctor/source",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			appVersion = tt.input
+			got := userAgent()
+
+			if got != tt.want {
+				t.Errorf("got: %s, want: %s\n", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestReadCustomerID(t *testing.T) {
 	enableStdio := disableStdio(t)
 	defer enableStdio()

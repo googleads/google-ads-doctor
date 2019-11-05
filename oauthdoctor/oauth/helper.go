@@ -64,6 +64,8 @@ type ConfigWriter interface {
 }
 
 var (
+	appVersion string
+
 	stdinSanitizer = strings.NewReplacer("\n", "")
 
 	readStdin = func() string {
@@ -264,13 +266,14 @@ func (c *Config) oauth2Client(code string) (*http.Client, string) {
 var apiURL = "https://googleads.googleapis.com/v1/customers/"
 
 // getAccount makes a HTTP request to Google Ads API customer account
-// endpoint and parse the JSON response.
+// endpoint and parses the JSON response.
 func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	req, err := http.NewRequest("GET", apiURL+c.CustomerID, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	req.Header.Set("user-agent", userAgent())
 	req.Header.Set("developer-token", c.ConfigFile.DevToken)
 	if c.ConfigFile.LoginCustomerID != "" {
 		req.Header.Set("login-customer-id", c.ConfigFile.LoginCustomerID)
@@ -305,6 +308,17 @@ func (c *Config) getAccount(client *http.Client) (*bytes.Buffer, error) {
 	}
 
 	return buf, nil
+}
+
+// userAgent returns a User-Agent HTTP header for this tool.
+func userAgent() string {
+	ua := "google-ads-doctor/"
+	if appVersion != "" {
+		ua += appVersion
+	} else {
+		ua += "source"
+	}
+	return ua
 }
 
 func (c *Config) sanitizeOutput(s string) string {
