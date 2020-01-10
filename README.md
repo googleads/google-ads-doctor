@@ -65,6 +65,12 @@ oauthdoctor -language python -oauthtype installed_app -configpath /my/path
 -verbose
 ```
 
+You can specify customer ID in advance with the -customerid option.
+
+```
+oauthdoctor -language python -oauthtype installed_app -customerid 123-456-7890
+```
+
 -sysinfo prints the system information to stdout. This is primarily of use if
 you need to send the output of the program when contacting support.
 
