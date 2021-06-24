@@ -263,7 +263,7 @@ func (c *Config) oauth2Client(code string) (*http.Client, string) {
 	return conf.Client(oauth2.NoContext, token), token.RefreshToken
 }
 
-var apiURL = "https://googleads.googleapis.com/v5/customers/"
+var apiURL = "https://googleads.googleapis.com/v8/customers/"
 
 // getAccount makes a HTTP request to Google Ads API customer account
 // endpoint and parses the JSON response.
