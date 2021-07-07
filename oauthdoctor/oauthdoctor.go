@@ -29,6 +29,7 @@ var (
 	language   = flag.String("language", "", "Required: The programming language of Google Ads API client library")
 	oauthType  = flag.String("oauthtype", "Required: The OAuth2 type for Google Ads API.", fmt.Sprintf("Values: %s", strings.Join(oauthTypes, ", ")))
 	configPath = flag.String("configpath", "", "Optional: An absolute file path for Google Ads API configuration file")
+	customerId = flag.String("customerid", "", "Optional: A customer ID. Providing this value avoids prompting for a customer ID during execution.")
 	hidePII    = flag.Bool("hidepii", true, "Optional: Suppress output of Personally Identifiable Information")
 	sysinfo    = flag.Bool("sysinfo", false, "Optional: Print system information.")
 	verbose    = flag.Bool("verbose", false, "Optional: Print out debugging info, such as JSON response")
@@ -101,7 +102,13 @@ func main() {
 		log.Printf("Config file validation failed: %s\n", err)
 	}
 
-	cid := oauth.ReadCustomerID()
+	var cid string
+	if strings.TrimSpace(*customerId) == "" {
+		cid = oauth.ReadCustomerID()
+	} else {
+		cid = strings.ReplaceAll(*customerId, "-", "")
+	}
+
 	c := oauth.Config{
 		ConfigFile: cfg,
 		CustomerID: cid,
