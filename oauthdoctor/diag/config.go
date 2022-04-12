@@ -153,7 +153,7 @@ var Languages = map[string]Config{
 				DevToken:         "api.googleads.developerToken",
 				RefreshToken:     "api.googleads.refreshToken",
 				LoginCustomerID:  "api.googleads.loginCustomerId",
-				PrivateKeyPath:   "api.googleads.jsonKeyFilePath",
+				PrivateKeyPath:   "api.googleads.serviceAccountSecretsPath",
 				DelegatedAccount: "api.googleads.serviceAccountUser",
 			}}},
 	"dotnet": {
